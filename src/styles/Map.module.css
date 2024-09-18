@@ -1,0 +1,50 @@
+.mapContainer {
+  position: relative;
+  height: 90vh;
+  width: 100%;
+}
+
+.leafletContainer {
+  height: 100%;
+  width: 100%;
+}
+
+.customDivIcon {
+  background: none;
+  border: none;
+}
+
+.markerPin {
+  width: 40px;
+  height: 40px;
+  border-radius: 50% 50% 50% 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: rotate(-45deg) translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.markerContent {
+  width: 34px;
+  height: 34px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+}
+
+.markerContent span {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.customDivIcon:hover .markerPin {
+  transform: rotate(-45deg) translate(-50%, -50%) scale(1.1);
+}
