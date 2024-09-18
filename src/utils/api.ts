@@ -1,24 +1,31 @@
 import { useState, useEffect } from "react";
 
+export interface Coordinate {
+  lat: number;
+  lng: number;
+}
+
 export interface TeamData {
   id: number;
   dorsal: number;
   name: string;
   route: "family" | "long" | "short";
   status: "not started" | "in progress" | "warning" | "dangerous" | "finished";
-  latitude: number;
-  longitude: number;
+  routeCoordinates: Coordinate[];
 }
 
 const initialTeams: TeamData[] = [
   {
     id: 1,
-    dorsal: 1001,
-    name: "Alejandro Alejandro",
+    dorsal: 100,
+    name: "Alejandro",
     route: "family",
     status: "not started",
-    latitude: 37.429731,
-    longitude: -1.523433,
+    routeCoordinates: [
+      { lat: 37.429731, lng: -1.523433 },
+      { lat: 37.43, lng: -1.524 },
+      { lat: 37.431, lng: -1.525 },
+    ],
   },
   {
     id: 2,
@@ -26,17 +33,23 @@ const initialTeams: TeamData[] = [
     name: "Antonio",
     route: "long",
     status: "in progress",
-    latitude: 37.429731,
-    longitude: -1.523433,
+    routeCoordinates: [
+      { lat: 37.429731, lng: -1.523433 },
+      { lat: 37.4305, lng: -1.5245 },
+      { lat: 37.432, lng: -1.526 },
+    ],
   },
   {
     id: 3,
     dorsal: 13,
-    name: "Carlos",
+    name: "Nombre Largo",
     route: "short",
     status: "warning",
-    latitude: 37.429731,
-    longitude: -1.523433,
+    routeCoordinates: [
+      { lat: 37.429731, lng: -1.523433 },
+      { lat: 37.4302, lng: -1.5242 },
+      { lat: 37.4315, lng: -1.5255 },
+    ],
   },
   {
     id: 4,
@@ -44,27 +57,36 @@ const initialTeams: TeamData[] = [
     name: "David",
     route: "family",
     status: "finished",
-    latitude: 37.429731,
-    longitude: -1.523433,
+    routeCoordinates: [
+      { lat: 37.429731, lng: -1.523433 },
+      { lat: 37.4299, lng: -1.5239 },
+      { lat: 37.4305, lng: -1.5245 },
+    ],
   },
   {
     id: 5,
-    dorsal: 1005,
+    dorsal: 105,
     name: "Enrique",
     route: "long",
     status: "dangerous",
-    latitude: 37.429731,
-    longitude: -1.523433,
+    routeCoordinates: [
+      { lat: 37.429731, lng: -1.523433 },
+      { lat: 37.431, lng: -1.525 },
+      { lat: 37.433, lng: -1.527 },
+    ],
   },
 ];
 
 function updateTeamPosition(team: TeamData): TeamData {
+  const lastPosition = team.routeCoordinates[team.routeCoordinates.length - 1];
   const latChange = (Math.random() - 0.5) * 0.1;
   const lonChange = (Math.random() - 0.5) * 0.1;
+  const newLat = Math.max(-90, Math.min(90, lastPosition.lat + latChange));
+  const newLon = lastPosition.lng + lonChange;
+
   return {
     ...team,
-    latitude: Math.max(-90, Math.min(90, team.latitude + latChange)),
-    longitude: team.longitude + lonChange,
+    routeCoordinates: [...team.routeCoordinates, { lat: newLat, lng: newLon }],
   };
 }
 

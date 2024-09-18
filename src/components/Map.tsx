@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  Polyline,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
@@ -40,7 +47,9 @@ const Map: React.FC = () => {
       setSelectedTeam(null);
     } else {
       setSelectedTeam(team);
-      mapRef.current?.setView([team.latitude, team.longitude], 10);
+      const lastPosition =
+        team.routeCoordinates[team.routeCoordinates.length - 1];
+      mapRef.current?.setView([lastPosition.lat, lastPosition.lng], 10);
 
       const marker = markerRefs.current[team.id];
       if (marker) {
@@ -139,7 +148,14 @@ const Map: React.FC = () => {
       >
         {selectedTeam && (
           <ChangeView
-            center={[selectedTeam.latitude, selectedTeam.longitude]}
+            center={[
+              selectedTeam.routeCoordinates[
+                selectedTeam.routeCoordinates.length - 1
+              ].lat,
+              selectedTeam.routeCoordinates[
+                selectedTeam.routeCoordinates.length - 1
+              ].lng,
+            ]}
           />
         )}
         <TileLayer
@@ -147,46 +163,65 @@ const Map: React.FC = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {filteredTeams.map((team) => (
-          <Marker
-            key={team.id}
-            position={[team.latitude, team.longitude]}
-            icon={getDorsalIcon(team, selectedTeam?.id === team.id)}
-            ref={(ref) => {
-              if (ref) {
-                markerRefs.current[team.id] = ref;
-              }
-            }}
-            eventHandlers={{
-              click: () => handleTeamClick(team),
-            }}
-          >
-            <Popup offset={[0, -10]}>
-              <div>
-                Dorsal: <strong>{team.dorsal}</strong> <br />
-                Nombre: {team.name} <br />
-                Ruta: {getRouteDisplayName(team.route)}
-                <br />
-                Estado:{" "}
-                <span
-                  style={{
-                    backgroundColor: getStatusColor(team.status),
-                    color:
-                      team.status === "dangerous" ||
-                      team.status === "in progress"
-                        ? "white"
-                        : "black",
-                    padding: "2px 5px",
-                    borderRadius: "3px",
-                  }}
-                >
-                  {getStatusDisplayName(team.status)}
-                </span>
-                <br />
-                Lat: {team.latitude.toFixed(4)}, Lon:{" "}
-                {team.longitude.toFixed(4)}
-              </div>
-            </Popup>
-          </Marker>
+          <React.Fragment key={team.id}>
+            <Marker
+              position={[
+                team.routeCoordinates[team.routeCoordinates.length - 1].lat,
+                team.routeCoordinates[team.routeCoordinates.length - 1].lng,
+              ]}
+              icon={getDorsalIcon(team, selectedTeam?.id === team.id)}
+              ref={(ref) => {
+                if (ref) {
+                  markerRefs.current[team.id] = ref;
+                }
+              }}
+              eventHandlers={{
+                click: () => handleTeamClick(team),
+              }}
+            >
+              <Popup offset={[0, -10]}>
+                <div>
+                  Dorsal: <strong>{team.dorsal}</strong> <br />
+                  Nombre: {team.name} <br />
+                  Ruta: {getRouteDisplayName(team.route)}
+                  <br />
+                  Estado:{" "}
+                  <span
+                    style={{
+                      backgroundColor: getStatusColor(team.status),
+                      color:
+                        team.status === "dangerous" ||
+                        team.status === "in progress"
+                          ? "white"
+                          : "black",
+                      padding: "2px 5px",
+                      borderRadius: "3px",
+                    }}
+                  >
+                    {getStatusDisplayName(team.status)}
+                  </span>
+                  <br />
+                  Lat:{" "}
+                  {team.routeCoordinates[
+                    team.routeCoordinates.length - 1
+                  ].lat.toFixed(4)}
+                  , Lon:{" "}
+                  {team.routeCoordinates[
+                    team.routeCoordinates.length - 1
+                  ].lng.toFixed(4)}
+                </div>
+              </Popup>
+            </Marker>
+            <Polyline
+              positions={team.routeCoordinates.map((coord) => [
+                coord.lat,
+                coord.lng,
+              ])}
+              color={getRouteColor(team.route)}
+              weight={3}
+              opacity={0.7}
+            />
+          </React.Fragment>
         ))}
       </MapContainer>
       <LegendFilter
