@@ -63,14 +63,22 @@ const Table: React.FC = () => {
           }
         },
       }),
-      columnHelper.accessor("latitude", {
-        header: "Latitud",
-        cell: (info) => info.getValue().toFixed(4),
-      }),
-      columnHelper.accessor("longitude", {
-        header: "Longitud",
-        cell: (info) => info.getValue().toFixed(4),
-      }),
+      columnHelper.accessor(
+        (row) => row.routeCoordinates[row.routeCoordinates.length - 1].lat,
+        {
+          id: "latitude",
+          header: "Latitud",
+          cell: (info) => info.getValue().toFixed(4),
+        }
+      ),
+      columnHelper.accessor(
+        (row) => row.routeCoordinates[row.routeCoordinates.length - 1].lng,
+        {
+          id: "longitude",
+          header: "Longitud",
+          cell: (info) => info.getValue().toFixed(4),
+        }
+      ),
     ],
     [columnHelper]
   );
