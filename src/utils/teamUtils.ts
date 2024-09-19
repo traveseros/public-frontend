@@ -1,5 +1,4 @@
 import { TeamData } from "../utils/api";
-import L from "leaflet";
 
 export const getRouteColor = (route: TeamData["route"]): string => {
   switch (route) {
@@ -72,25 +71,4 @@ export const getStatusIcon = (status: TeamData["status"]): string => {
     default:
       return "⚪";
   }
-};
-
-export const getDorsalIcon = (
-  team: TeamData,
-  isSelected: boolean,
-  styles: { customDivIcon: string; markerPin: string; markerContent: string }
-) => {
-  const backgroundColor = isSelected ? "red" : getRouteColor(team.route);
-  return L.divIcon({
-    className: styles.customDivIcon,
-    html: `
-      <div class="${styles.markerPin}" style="background-color:${backgroundColor};">
-        <div class="${styles.markerContent}">
-          <span>${team.dorsal}</span>
-        </div>
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [-7, 5],
-  });
 };

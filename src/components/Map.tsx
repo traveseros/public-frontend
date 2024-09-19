@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   MapContainer,
   TileLayer,
@@ -6,6 +12,7 @@ import {
   Popup,
   useMap,
   Polyline,
+  CircleMarker,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -16,7 +23,6 @@ import {
   getRouteDisplayName,
   getStatusColor,
   getStatusDisplayName,
-  getDorsalIcon,
 } from "../utils/teamUtils";
 import TeamList from "./TeamList";
 import MapFilter from "./MapFilter";
@@ -29,6 +35,125 @@ const ChangeView: React.FC<{ center: [number, number] }> = ({ center }) => {
   }, [center, map]);
   return null;
 };
+
+const TeamMapElements: React.FC<{
+  team: TeamData;
+  isSelected: boolean;
+  onTeamClick: (team: TeamData) => void;
+}> = React.memo(({ team, isSelected, onTeamClick }) => {
+  const map = useMap();
+  const markerRef = useRef<L.Marker>(null);
+  const popupRef = useRef<L.Popup>(null);
+
+  const getTeamColor = useCallback((team: TeamData, isSelected: boolean) => {
+    const color = isSelected ? "red" : getRouteColor(team.route);
+    return color;
+  }, []);
+
+  const teamColor = getTeamColor(team, isSelected);
+  const lastPosition = team.routeCoordinates[team.routeCoordinates.length - 1];
+
+  const getDorsalIcon = useCallback(
+    (team: TeamData, isSelected: boolean) => {
+      const backgroundColor = getTeamColor(team, isSelected);
+      return L.divIcon({
+        className: styles.customDivIcon,
+        html: `
+        <div class="${styles.markerPin}" style="background-color:${backgroundColor};">
+          <div class="${styles.markerContent}">
+            <span>${team.dorsal}</span>
+          </div>
+        </div>
+      `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 50],
+        popupAnchor: [0, -20],
+      });
+    },
+    [getTeamColor]
+  );
+
+  useEffect(() => {
+    if (isSelected && markerRef.current && popupRef.current) {
+      const marker = markerRef.current;
+      const popup = popupRef.current;
+
+      marker.bindPopup(popup);
+
+      requestAnimationFrame(() => {
+        marker.openPopup();
+        map.panTo([lastPosition.lat, lastPosition.lng], {
+          animate: true,
+          duration: 0.5,
+        });
+      });
+    }
+  }, [isSelected, lastPosition.lat, lastPosition.lng, map]);
+
+  return (
+    <>
+      <Polyline
+        key={`polyline-${team.id}-${isSelected}`}
+        positions={team.routeCoordinates.map((coord) => [coord.lat, coord.lng])}
+        color={teamColor}
+        weight={3}
+        opacity={0.7}
+        eventHandlers={{
+          click: () => onTeamClick(team),
+        }}
+      />
+      <CircleMarker
+        key={`circle-${team.id}-${isSelected}`}
+        center={[lastPosition.lat, lastPosition.lng]}
+        radius={3}
+        color={teamColor}
+        fillColor={teamColor}
+        fillOpacity={1}
+        weight={2}
+        eventHandlers={{
+          click: () => onTeamClick(team),
+        }}
+      />
+      <Marker
+        key={`marker-${team.id}-${isSelected}`}
+        position={[lastPosition.lat, lastPosition.lng]}
+        icon={getDorsalIcon(team, isSelected)}
+        eventHandlers={{
+          click: () => onTeamClick(team),
+        }}
+        ref={markerRef}
+      >
+        <Popup ref={popupRef} offset={[1.5, -12]}>
+          <div>
+            Dorsal: <strong>{team.dorsal}</strong> <br />
+            Nombre: {team.name} <br />
+            Ruta: {getRouteDisplayName(team.route)}
+            <br />
+            Estado:{" "}
+            <span
+              style={{
+                backgroundColor: getStatusColor(team.status),
+                color:
+                  team.status === "dangerous" || team.status === "in progress"
+                    ? "white"
+                    : "black",
+                padding: "2px 5px",
+                borderRadius: "3px",
+              }}
+            >
+              {getStatusDisplayName(team.status)}
+            </span>
+            <br />
+            Lat: {lastPosition.lat.toFixed(4)}, Lon:{" "}
+            {lastPosition.lng.toFixed(4)}
+          </div>
+        </Popup>
+      </Marker>
+    </>
+  );
+});
+
+TeamMapElements.displayName = "TeamMapElements";
 
 const Map: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
@@ -43,44 +168,57 @@ const Map: React.FC = () => {
     setIsClient(true);
   }, []);
 
+  useEffect(() => {
+    if (selectedTeam && mapRef.current) {
+      const lastPosition =
+        selectedTeam.routeCoordinates[selectedTeam.routeCoordinates.length - 1];
+      mapRef.current.panTo([lastPosition.lat, lastPosition.lng], {
+        animate: true,
+      });
+    }
+  }, [selectedTeam]);
+
+  const handleTeamClick = useCallback(
+    (team: TeamData) => {
+      Object.values(markerRefs.current).forEach((marker) =>
+        marker.closePopup()
+      );
+
+      if (selectedTeam && selectedTeam.id === team.id) {
+        setSelectedTeam(null);
+      } else {
+        setSelectedTeam(team);
+        const lastPosition =
+          team.routeCoordinates[team.routeCoordinates.length - 1];
+        mapRef.current?.panTo([lastPosition.lat, lastPosition.lng], {
+          animate: true,
+        });
+
+        const marker = markerRefs.current[team.id];
+        if (marker) {
+          marker.openPopup();
+        }
+      }
+    },
+    [selectedTeam]
+  );
+
+  const filteredTeams = useMemo(() => {
+    return teams.filter(
+      (team) =>
+        routeFilters.length > 0 &&
+        routeFilters.includes(team.route) &&
+        statusFilters.length > 0 &&
+        statusFilters.includes(team.status)
+    );
+  }, [teams, routeFilters, statusFilters]);
+
+  const shouldRenderTeams = routeFilters.length > 0 && statusFilters.length > 0;
+
   if (!isClient) return <div>Cargando mapa...</div>;
 
   const initialCenter: [number, number] = [37.429731, -1.523433];
   const initialZoom = 15;
-
-  const handleTeamClick = (team: TeamData) => {
-    Object.values(markerRefs.current).forEach((marker) => marker.closePopup());
-
-    if (selectedTeam && selectedTeam.id === team.id) {
-      setSelectedTeam(null);
-    } else {
-      setSelectedTeam(team);
-      const lastPosition =
-        team.routeCoordinates[team.routeCoordinates.length - 1];
-      mapRef.current?.setView([lastPosition.lat, lastPosition.lng], 10);
-
-      const marker = markerRefs.current[team.id];
-      if (marker) {
-        marker.openPopup();
-      }
-    }
-  };
-
-  const filteredTeams = teams.filter(
-    (team) =>
-      routeFilters.length > 0 &&
-      routeFilters.includes(team.route) &&
-      statusFilters.length > 0 &&
-      statusFilters.includes(team.status)
-  );
-
-  const shouldRenderTeams = routeFilters.length > 0 && statusFilters.length > 0;
-
-  const dorsalIconStyles = {
-    customDivIcon: styles.customDivIcon,
-    markerPin: styles.markerPin,
-    markerContent: styles.markerContent,
-  };
 
   return (
     <div className={styles.mapPageContainer}>
@@ -116,69 +254,12 @@ const Map: React.FC = () => {
           />
           {shouldRenderTeams &&
             filteredTeams.map((team) => (
-              <React.Fragment key={team.id}>
-                <Marker
-                  position={[
-                    team.routeCoordinates[team.routeCoordinates.length - 1].lat,
-                    team.routeCoordinates[team.routeCoordinates.length - 1].lng,
-                  ]}
-                  icon={getDorsalIcon(
-                    team,
-                    selectedTeam?.id === team.id,
-                    dorsalIconStyles
-                  )}
-                  ref={(ref) => {
-                    if (ref) {
-                      markerRefs.current[team.id] = ref;
-                    }
-                  }}
-                  eventHandlers={{
-                    click: () => handleTeamClick(team),
-                  }}
-                >
-                  <Popup offset={[0, -10]}>
-                    <div>
-                      Dorsal: <strong>{team.dorsal}</strong> <br />
-                      Nombre: {team.name} <br />
-                      Ruta: {getRouteDisplayName(team.route)}
-                      <br />
-                      Estado:{" "}
-                      <span
-                        style={{
-                          backgroundColor: getStatusColor(team.status),
-                          color:
-                            team.status === "dangerous" ||
-                            team.status === "in progress"
-                              ? "white"
-                              : "black",
-                          padding: "2px 5px",
-                          borderRadius: "3px",
-                        }}
-                      >
-                        {getStatusDisplayName(team.status)}
-                      </span>
-                      <br />
-                      Lat:{" "}
-                      {team.routeCoordinates[
-                        team.routeCoordinates.length - 1
-                      ].lat.toFixed(4)}
-                      , Lon:{" "}
-                      {team.routeCoordinates[
-                        team.routeCoordinates.length - 1
-                      ].lng.toFixed(4)}
-                    </div>
-                  </Popup>
-                </Marker>
-                <Polyline
-                  positions={team.routeCoordinates.map((coord) => [
-                    coord.lat,
-                    coord.lng,
-                  ])}
-                  color={getRouteColor(team.route)}
-                  weight={3}
-                  opacity={0.7}
-                />
-              </React.Fragment>
+              <TeamMapElements
+                key={team.id}
+                team={team}
+                isSelected={selectedTeam?.id === team.id}
+                onTeamClick={handleTeamClick}
+              />
             ))}
         </MapContainer>
         <div className={styles.teamListWrapper}>

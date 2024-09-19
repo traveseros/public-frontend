@@ -40,6 +40,10 @@
   gap: 5px;
 }
 
+.teamItem:last-child {
+  margin-bottom: 0;
+}
+
 .teamItem:hover {
   background-color: rgba(0, 0, 0, 0.1);
 }
