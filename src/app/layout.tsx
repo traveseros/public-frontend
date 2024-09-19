@@ -18,7 +18,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} ${styles.body}`}>
         <div className={styles.container}>
-          <nav className={styles.nav}>
+          {/* <nav className={styles.nav}>
             <div className={styles.navItem}>
               <Link href="/" className={styles.navLink}>
                 Mapa
@@ -29,7 +29,7 @@ export default function RootLayout({
                 Tabla
               </Link>
             </div>
-          </nav>
+          </nav> */}
           <main className={styles.main}>{children}</main>
         </div>
       </body>

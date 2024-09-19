@@ -1,0 +1,81 @@
+.header {
+  background-color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0 24px;
+}
+
+.column:first-child {
+  align-items: flex-end;
+  border-right: 1px solid #b3b6ba;
+}
+
+.column:last-child {
+  align-items: flex-start;
+}
+
+.columnTitle {
+  margin-bottom: 16px;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+}
+
+.checkboxGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.column:first-child .checkboxGrid {
+  grid-template-columns: repeat(2, auto);
+  justify-content: end;
+}
+
+.column:last-child .checkboxGrid {
+  grid-template-columns: repeat(3, auto);
+  justify-content: start;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: small;
+}
+
+.checkbox {
+  margin: 0;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 10px;
+  }
+
+  .column:first-child .checkboxGrid,
+  .column:last-child .checkboxGrid {
+    grid-template-columns: 1fr;
+    justify-content: center;
+  }
+}

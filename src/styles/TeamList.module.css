@@ -79,3 +79,7 @@
   text-overflow: ellipsis;
   max-width: 100px;
 }
+
+.noData {
+  text-align: center;
+}
