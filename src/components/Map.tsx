@@ -156,17 +156,12 @@ const TeamMapElements: React.FC<{
 TeamMapElements.displayName = "TeamMapElements";
 
 const Map: React.FC = () => {
-  const [isClient, setIsClient] = useState(false);
   const teams = useTeamData();
   const mapRef = useRef<L.Map | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
   const markerRefs = useRef<{ [key: number]: L.Marker }>({});
   const [routeFilters, setRouteFilters] = useState<TeamData["route"][]>([]);
   const [statusFilters, setStatusFilters] = useState<TeamData["status"][]>([]);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   useEffect(() => {
     if (selectedTeam && mapRef.current) {
@@ -214,8 +209,6 @@ const Map: React.FC = () => {
   }, [teams, routeFilters, statusFilters]);
 
   const shouldRenderTeams = routeFilters.length > 0 && statusFilters.length > 0;
-
-  if (!isClient) return <div>Cargando mapa...</div>;
 
   const initialCenter: [number, number] = [37.429731, -1.523433];
   const initialZoom = 15;
