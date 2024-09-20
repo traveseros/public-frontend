@@ -26,6 +26,10 @@
   cursor: pointer;
   font-size: 12px;
   transition: all 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .filterButton:hover {
@@ -33,8 +37,12 @@
 }
 
 .filterButton.active {
-  background-color: #4dabf7;
+  background-color: #1891f4;
   color: white;
+}
+
+.filterButton.active:hover {
+  background-color: #4dabf7;
 }
 
 @media (max-width: 768px) {
