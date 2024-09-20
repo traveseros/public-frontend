@@ -1,0 +1,51 @@
+.filterContainer {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.filterGroup {
+  display: flex;
+  gap: 5px;
+}
+
+.filterButton {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.filterButton:hover {
+  background-color: #e0e0e0;
+}
+
+.filterButton.active {
+  background-color: #4dabf7;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .filterContainer {
+    left: 10px;
+    right: 10px;
+    transform: none;
+  }
+
+  .filterGroup {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}

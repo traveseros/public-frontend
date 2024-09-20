@@ -1,4 +1,4 @@
-import { TeamData } from "../utils/api";
+import { TeamData } from "../api";
 
 export const getRouteColor = (route: TeamData["route"]): string => {
   switch (route) {

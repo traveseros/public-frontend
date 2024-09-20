@@ -23,9 +23,9 @@ import {
   getRouteDisplayName,
   getStatusColor,
   getStatusDisplayName,
-} from "../utils/teamUtils";
+} from "../utils/team";
 import TeamList from "./TeamList";
-import MapFilter from "./MapFilter";
+import FilterButtons from "./FilterButtons";
 
 const ChangeView: React.FC<{ center: [number, number] }> = ({ center }) => {
   const map = useMap();
@@ -221,56 +221,54 @@ const Map: React.FC = () => {
   const initialZoom = 15;
 
   return (
-    <div className={styles.mapPageContainer}>
-      <MapFilter
+    <div className={styles.mapContainer}>
+      <MapContainer
+        center={initialCenter}
+        zoom={initialZoom}
+        scrollWheelZoom={true}
+        className={styles.leafletContainer}
+        ref={mapRef}
+      >
+        {selectedTeam && (
+          <ChangeView
+            center={[
+              selectedTeam.routeCoordinates[
+                selectedTeam.routeCoordinates.length - 1
+              ].lat,
+              selectedTeam.routeCoordinates[
+                selectedTeam.routeCoordinates.length - 1
+              ].lng,
+            ]}
+          />
+        )}
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {shouldRenderTeams &&
+          filteredTeams.map((team) => (
+            <TeamMapElements
+              key={team.id}
+              team={team}
+              isSelected={selectedTeam?.id === team.id}
+              onTeamClick={handleTeamClick}
+            />
+          ))}
+      </MapContainer>
+      <FilterButtons
         routeFilters={routeFilters}
         statusFilters={statusFilters}
         onRouteFiltersChange={setRouteFilters}
         onStatusFiltersChange={setStatusFilters}
       />
-      <div className={styles.mapContainer}>
-        <MapContainer
-          center={initialCenter}
-          zoom={initialZoom}
-          scrollWheelZoom={true}
-          className={styles.leafletContainer}
-          ref={mapRef}
-        >
-          {selectedTeam && (
-            <ChangeView
-              center={[
-                selectedTeam.routeCoordinates[
-                  selectedTeam.routeCoordinates.length - 1
-                ].lat,
-                selectedTeam.routeCoordinates[
-                  selectedTeam.routeCoordinates.length - 1
-                ].lng,
-              ]}
-            />
-          )}
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {shouldRenderTeams &&
-            filteredTeams.map((team) => (
-              <TeamMapElements
-                key={team.id}
-                team={team}
-                isSelected={selectedTeam?.id === team.id}
-                onTeamClick={handleTeamClick}
-              />
-            ))}
-        </MapContainer>
-        <div className={styles.teamListWrapper}>
-          <TeamList
-            teams={teams}
-            selectedTeam={selectedTeam}
-            onTeamClick={handleTeamClick}
-            routeFilters={routeFilters}
-            statusFilters={statusFilters}
-          />
-        </div>
+      <div className={styles.teamListWrapper}>
+        <TeamList
+          teams={teams}
+          selectedTeam={selectedTeam}
+          onTeamClick={handleTeamClick}
+          routeFilters={routeFilters}
+          statusFilters={statusFilters}
+        />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import {
   getRouteDisplayName,
   getStatusDisplayName,
   getStatusIcon,
-} from "../utils/teamUtils";
+} from "../utils/team";
 
 interface TeamListProps {
   teams: TeamData[];
