@@ -21,6 +21,8 @@ const BACKUP_FILE = path.join(process.cwd(), "data", "teams_backup.json");
 const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 const USE_EXTERNAL_API = process.env.USE_EXTERNAL_API === "true";
 
+let lastUpdateTime = 0;
+
 async function readTeamsData(): Promise<TeamData[]> {
   try {
     const data = await fs.readFile(DATA_FILE, "utf8");
@@ -41,7 +43,6 @@ async function writeTeamsData(data: TeamData[]): Promise<void> {
   const jsonData = JSON.stringify(data, null, 2);
 
   await fs.writeFile(DATA_FILE, jsonData, "utf8");
-
   await fs.writeFile(BACKUP_FILE, jsonData, "utf8");
 }
 
@@ -78,23 +79,30 @@ async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
 export async function GET() {
   try {
     let teams: TeamData[];
+    const currentTime = Date.now();
 
-    if (USE_EXTERNAL_API) {
-      try {
-        teams = await getTeamsFromExternalAPI();
-      } catch (error) {
-        console.error("Error fetching from external API:", error);
+    if (currentTime - lastUpdateTime >= 60000) {
+      if (USE_EXTERNAL_API) {
+        try {
+          teams = await getTeamsFromExternalAPI();
+        } catch (error) {
+          console.error("Error fetching from external API:", error);
+          teams = await readTeamsData();
+        }
+      } else {
         teams = await readTeamsData();
       }
+
+      if (teams.length > 0) {
+        teams = teams.map(updateTeamPosition);
+        await writeTeamsData(teams);
+      } else {
+        console.warn("No team data available. Using empty array.");
+      }
+
+      lastUpdateTime = currentTime;
     } else {
       teams = await readTeamsData();
-    }
-
-    if (teams.length > 0) {
-      teams = teams.map(updateTeamPosition);
-      await writeTeamsData(teams);
-    } else {
-      console.warn("No team data available. Using empty array.");
     }
 
     return NextResponse.json(teams);

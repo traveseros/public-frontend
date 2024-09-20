@@ -1,21 +1,21 @@
-"use client";
-
 import React, { useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
-  getSortedRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
+  getSortedRowModel,
   flexRender,
   createColumnHelper,
 } from "@tanstack/react-table";
-import { useTeamData, TeamData } from "../utils/api";
+import { useTeamData } from "../hooks/useTeamData";
+import { TeamData } from "../app/api/teams/route";
 import styles from "../styles/Table.module.css";
 
 const Table: React.FC = () => {
-  const teams = useTeamData();
+  const { teams } = useTeamData();
+  const [globalFilter, setGlobalFilter] = useState("");
   const columnHelper = createColumnHelper<TeamData>();
-  const [pageIndex, setPageIndex] = useState(0);
 
   const columns = React.useMemo(
     () => [
@@ -87,22 +87,13 @@ const Table: React.FC = () => {
     data: teams,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onPaginationChange: (updater) => {
-      if (typeof updater === "function") {
-        const newState = updater(table.getState().pagination);
-        setPageIndex(newState.pageIndex);
-      } else {
-        setPageIndex(updater.pageIndex);
-      }
-    },
+    getSortedRowModel: getSortedRowModel(),
     state: {
-      pagination: {
-        pageIndex,
-        pageSize: 10,
-      },
+      globalFilter,
     },
+    onGlobalFilterChange: setGlobalFilter,
   });
 
   if (teams.length === 0) {
@@ -111,40 +102,56 @@ const Table: React.FC = () => {
 
   return (
     <div className={styles.tableContainer}>
-      <table className={styles.dataTable}>
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  onClick={header.column.getToggleSortingHandler()}
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                  {{
-                    asc: " 🔼",
-                    desc: " 🔽",
-                  }[header.column.getIsSorted() as string] ?? null}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className={styles.tableHeader}>
+        <h2 className={styles.tableTitle}>Datos de los equipos</h2>
+        <div className={styles.searchContainer}>
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className={styles.searchInput}
+            placeholder="Buscar..."
+          />
+        </div>
+      </div>
+      <div className={styles.tableWrapper}>
+        <table className={styles.dataTable}>
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                    {{
+                      asc: " 🔼",
+                      desc: " 🔽",
+                    }[header.column.getIsSorted() as string] ?? null}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <td
+                    key={cell.id}
+                    data-label={cell.column.columnDef.header as string}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <div className={styles.pagination}>
         <button
           onClick={() => table.setPageIndex(0)}
@@ -181,12 +188,12 @@ const Table: React.FC = () => {
           | Ir a la página:{" "}
           <input
             type="number"
-            value={pageIndex + 1}
+            defaultValue={table.getState().pagination.pageIndex + 1}
             onChange={(e) => {
               const page = e.target.value ? Number(e.target.value) - 1 : 0;
               table.setPageIndex(page);
             }}
-            style={{ width: "50px" }}
+            className={styles.pageInput}
           />
         </span>
         <select
