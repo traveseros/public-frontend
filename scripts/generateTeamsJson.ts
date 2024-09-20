@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import fs from "fs/promises";
+import path from "path";
 
-export interface Coordinate {
+interface Coordinate {
   lat: number;
   lng: number;
 }
 
-export interface TeamData {
+interface TeamData {
   id: number;
   dorsal: number;
   name: string;
@@ -77,29 +78,18 @@ const initialTeams: TeamData[] = [
   },
 ];
 
-function updateTeamPosition(team: TeamData): TeamData {
-  const lastPosition = team.routeCoordinates[team.routeCoordinates.length - 1];
-  const latChange = (Math.random() - 0.5) * 0.1;
-  const lonChange = (Math.random() - 0.5) * 0.1;
-  const newLat = Math.max(-90, Math.min(90, lastPosition.lat + latChange));
-  const newLon = lastPosition.lng + lonChange;
+async function generateTeamsJson() {
+  const DATA_FILE = path.join(process.cwd(), "data", "teams.json");
 
-  return {
-    ...team,
-    routeCoordinates: [...team.routeCoordinates, { lat: newLat, lng: newLon }],
-  };
+  try {
+    await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
+
+    await fs.writeFile(DATA_FILE, JSON.stringify(initialTeams, null, 2));
+
+    console.log(`Archivo JSON generado exitosamente en: ${DATA_FILE}`);
+  } catch (error) {
+    console.error("Error al generar el archivo JSON:", error);
+  }
 }
 
-export function useTeamData(): TeamData[] {
-  const [teams, setTeams] = useState<TeamData[]>(initialTeams);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTeams((prevTeams) => prevTeams.map(updateTeamPosition));
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  return teams;
-}
+generateTeamsJson();

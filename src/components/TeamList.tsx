@@ -1,12 +1,12 @@
 import React from "react";
 import styles from "../styles/TeamList.module.css";
-import { TeamData } from "../utils/api";
+import { TeamData } from "../app/api/teams/route";
 import {
   getRouteColor,
   getRouteDisplayName,
   getStatusDisplayName,
   getStatusIcon,
-} from "../utils/team";
+} from "../app/lib/teams/utils";
 
 interface TeamListProps {
   teams: TeamData[];

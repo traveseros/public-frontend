@@ -17,15 +17,18 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
-import { useTeamData, TeamData } from "../utils/api";
+import { useTeamData } from "../hooks/useTeamData";
+import { TeamData } from "../app/api/teams/route";
 import {
   getRouteColor,
   getRouteDisplayName,
   getStatusColor,
   getStatusDisplayName,
-} from "../utils/team";
+} from "../app/lib/teams/utils";
 import TeamList from "./TeamList";
 import FilterButtons from "./FilterButtons";
+import LoadingSpinner from "./LoadingSpinner";
+import VisualError from "./VisualError";
 
 const ChangeView: React.FC<{ center: [number, number] }> = ({ center }) => {
   const map = useMap();
@@ -156,7 +159,7 @@ const TeamMapElements: React.FC<{
 TeamMapElements.displayName = "TeamMapElements";
 
 const Map: React.FC = () => {
-  const teams = useTeamData();
+  const { teams, loading, error } = useTeamData();
   const mapRef = useRef<L.Map | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
   const markerRefs = useRef<{ [key: number]: L.Marker }>({});
@@ -212,6 +215,14 @@ const Map: React.FC = () => {
 
   const initialCenter: [number, number] = [37.429731, -1.523433];
   const initialZoom = 15;
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <VisualError error={error} />;
+  }
 
   return (
     <div className={styles.mapContainer}>

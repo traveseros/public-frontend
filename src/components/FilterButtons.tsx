@@ -1,6 +1,9 @@
 import React, { useEffect } from "react";
-import { TeamData } from "../utils/api";
-import { getRouteDisplayName, getStatusDisplayName } from "../utils/team";
+import { TeamData } from "../app/api/teams/route";
+import {
+  getRouteDisplayName,
+  getStatusDisplayName,
+} from "../app/lib/teams/utils";
 import styles from "../styles/FilterButtons.module.css";
 
 interface FilterButtonsProps {
