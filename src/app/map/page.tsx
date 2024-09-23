@@ -2,7 +2,6 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import styles from "../../styles/Map.module.css";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 const MapWithNoSSR = dynamic(() => import("../../components/Map"), {
@@ -10,10 +9,8 @@ const MapWithNoSSR = dynamic(() => import("../../components/Map"), {
   loading: () => <LoadingSpinner />,
 });
 
-export default function MapPage() {
-  return (
-    <div className={styles.mapPageContainer}>
-      <MapWithNoSSR />
-    </div>
-  );
-}
+const MapPage: React.FC = () => {
+  return <MapWithNoSSR />;
+};
+
+export default React.memo(MapPage);

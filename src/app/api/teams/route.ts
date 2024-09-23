@@ -17,7 +17,6 @@ export interface TeamData {
 }
 
 const DATA_FILE = path.join(process.cwd(), "data", "teams.json");
-const BACKUP_FILE = path.join(process.cwd(), "data", "teams_backup.json");
 const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 const USE_EXTERNAL_API = process.env.USE_EXTERNAL_API === "true";
 
@@ -29,25 +28,31 @@ async function readTeamsData(): Promise<TeamData[]> {
     return JSON.parse(data);
   } catch (error) {
     console.error("Error reading teams data:", error);
-    try {
-      const backupData = await fs.readFile(BACKUP_FILE, "utf8");
-      return JSON.parse(backupData);
-    } catch (backupError) {
-      console.error("Error reading backup data:", backupError);
-      return [];
-    }
+    return [];
   }
 }
 
 async function writeTeamsData(data: TeamData[]): Promise<void> {
-  const jsonData = JSON.stringify(data, null, 2);
-
-  await fs.writeFile(DATA_FILE, jsonData, "utf8");
-  await fs.writeFile(BACKUP_FILE, jsonData, "utf8");
+  try {
+    const jsonData = JSON.stringify(data, null, 2);
+    await fs.writeFile(DATA_FILE, jsonData, "utf8");
+  } catch (error) {
+    console.error("Error writing teams data:", error);
+  }
 }
 
-function sanitizeJSON(json: string): string {
-  return json.replace(/[^\x20-\x7E]/g, "");
+function sanitizeTeamData(team: TeamData): TeamData {
+  return {
+    id: team.id,
+    dorsal: team.dorsal,
+    name: team.name,
+    route: team.route,
+    status: team.status,
+    routeCoordinates: team.routeCoordinates.map((coord) => ({
+      lat: Number(coord.lat.toFixed(6)),
+      lng: Number(coord.lng.toFixed(6)),
+    })),
+  };
 }
 
 function updateTeamPosition(team: TeamData): TeamData {
@@ -57,10 +62,10 @@ function updateTeamPosition(team: TeamData): TeamData {
   const newLat = Math.max(-90, Math.min(90, lastPosition.lat + latChange));
   const newLon = lastPosition.lng + lonChange;
 
-  return {
+  return sanitizeTeamData({
     ...team,
     routeCoordinates: [...team.routeCoordinates, { lat: newLat, lng: newLon }],
-  };
+  });
 }
 
 async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
@@ -71,9 +76,8 @@ async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  const data = await response.text();
-  const sanitizedData = sanitizeJSON(data);
-  return JSON.parse(sanitizedData);
+  const data = await response.json();
+  return data.map(sanitizeTeamData);
 }
 
 export async function GET() {

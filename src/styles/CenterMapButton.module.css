@@ -1,0 +1,64 @@
+.centerMapButtonContainer {
+  position: absolute;
+  top: 70px;
+  z-index: 1000;
+}
+
+.centerMapButton {
+  width: 30px;
+  height: 30px;
+  background-color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+}
+
+.centerMapButton:hover {
+  background-color: #f4f4f4;
+}
+
+.homeIcon {
+  color: #333;
+}
+
+.tooltip {
+  visibility: hidden;
+  width: 120px;
+  background-color: #555;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: calc(100% + 10px);
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 14px;
+  font-weight: normal;
+  white-space: nowrap;
+  pointer-events: none;
+  cursor: default;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  margin-top: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent #555 transparent transparent;
+}
+
+.centerMapButton:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
