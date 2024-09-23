@@ -3,7 +3,6 @@ import styles from "../styles/LoadingSpinner.module.css";
 
 interface LoadingSpinnerProps {
   text?: string;
-  source?: string;
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = React.memo(

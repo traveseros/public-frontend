@@ -17,6 +17,7 @@ export interface TeamData {
 }
 
 const DATA_FILE = path.join(process.cwd(), "data", "teams.json");
+const BACKUP_FILE = path.join(process.cwd(), "data", "teams.backup.json");
 const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 const USE_EXTERNAL_API = process.env.USE_EXTERNAL_API === "true";
 
@@ -28,16 +29,39 @@ async function readTeamsData(): Promise<TeamData[]> {
     return JSON.parse(data);
   } catch (error) {
     console.error("Error reading teams data:", error);
-    return [];
+    try {
+      console.log("Attempting to read from backup file...");
+      const backupData = await fs.readFile(BACKUP_FILE, "utf8");
+      return JSON.parse(backupData);
+    } catch (backupError) {
+      console.error("Error reading backup data:", backupError);
+      return [];
+    }
   }
 }
 
 async function writeTeamsData(data: TeamData[]): Promise<void> {
+  const jsonData = JSON.stringify(data, null, 2);
+  const tempFile = `${DATA_FILE}.tmp`;
+
   try {
-    const jsonData = JSON.stringify(data, null, 2);
-    await fs.writeFile(DATA_FILE, jsonData, "utf8");
+    await fs.writeFile(tempFile, jsonData, "utf8");
+
+    try {
+      await fs.copyFile(DATA_FILE, BACKUP_FILE);
+    } catch (backupError) {
+      console.error("Error creating backup:", backupError);
+    }
+
+    await fs.rename(tempFile, DATA_FILE);
   } catch (error) {
     console.error("Error writing teams data:", error);
+    try {
+      await fs.unlink(tempFile);
+    } catch (cleanupError) {
+      console.error("Error cleaning up temporary file:", cleanupError);
+    }
+    throw error;
   }
 }
 

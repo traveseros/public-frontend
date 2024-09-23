@@ -9,8 +9,10 @@ const MapWithNoSSR = dynamic(() => import("../../components/Map"), {
   loading: () => <LoadingSpinner />,
 });
 
-const MapPage: React.FC = () => {
+const MapPage: React.FC = React.memo(() => {
   return <MapWithNoSSR />;
-};
+});
 
-export default React.memo(MapPage);
+MapPage.displayName = "MapPage";
+
+export default MapPage;

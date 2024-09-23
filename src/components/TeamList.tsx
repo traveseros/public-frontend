@@ -45,6 +45,11 @@ const TeamList: React.FC<TeamListProps> = ({
 
   return (
     <div className={styles.legend}>
+      <h3 className={styles.teamCount}>
+        {"Mostrando "}
+        {filteredTeams.length}{" "}
+        {filteredTeams.length === 1 ? "equipo" : "equipos"}
+      </h3>
       <ul className={styles.teamList}>
         {filteredTeams.map((team) => (
           <li
