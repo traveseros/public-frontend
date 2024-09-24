@@ -17,11 +17,8 @@ export interface TeamData {
 }
 
 const DATA_FILE = path.join(process.cwd(), "data", "teams.json");
-const BACKUP_FILE = path.join(process.cwd(), "data", "teams.backup.json");
 const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 const USE_EXTERNAL_API = process.env.USE_EXTERNAL_API === "true";
-
-let lastUpdateTime = 0;
 
 async function readTeamsData(): Promise<TeamData[]> {
   try {
@@ -29,54 +26,12 @@ async function readTeamsData(): Promise<TeamData[]> {
     return JSON.parse(data);
   } catch (error) {
     console.error("Error reading teams data:", error);
-    try {
-      console.log("Attempting to read from backup file...");
-      const backupData = await fs.readFile(BACKUP_FILE, "utf8");
-      return JSON.parse(backupData);
-    } catch (backupError) {
-      console.error("Error reading backup data:", backupError);
-      return [];
-    }
+    return [];
   }
 }
 
 async function writeTeamsData(data: TeamData[]): Promise<void> {
-  const jsonData = JSON.stringify(data, null, 2);
-  const tempFile = `${DATA_FILE}.tmp`;
-
-  try {
-    await fs.writeFile(tempFile, jsonData, "utf8");
-
-    try {
-      await fs.copyFile(DATA_FILE, BACKUP_FILE);
-    } catch (backupError) {
-      console.error("Error creating backup:", backupError);
-    }
-
-    await fs.rename(tempFile, DATA_FILE);
-  } catch (error) {
-    console.error("Error writing teams data:", error);
-    try {
-      await fs.unlink(tempFile);
-    } catch (cleanupError) {
-      console.error("Error cleaning up temporary file:", cleanupError);
-    }
-    throw error;
-  }
-}
-
-function sanitizeTeamData(team: TeamData): TeamData {
-  return {
-    id: team.id,
-    dorsal: team.dorsal,
-    name: team.name,
-    route: team.route,
-    status: team.status,
-    routeCoordinates: team.routeCoordinates.map((coord) => ({
-      lat: Number(coord.lat.toFixed(6)),
-      lng: Number(coord.lng.toFixed(6)),
-    })),
-  };
+  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
 function updateTeamPosition(team: TeamData): TeamData {
@@ -86,10 +41,10 @@ function updateTeamPosition(team: TeamData): TeamData {
   const newLat = Math.max(-90, Math.min(90, lastPosition.lat + latChange));
   const newLon = lastPosition.lng + lonChange;
 
-  return sanitizeTeamData({
+  return {
     ...team,
     routeCoordinates: [...team.routeCoordinates, { lat: newLat, lng: newLon }],
-  });
+  };
 }
 
 async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
@@ -100,37 +55,19 @@ async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
-  const data = await response.json();
-  return data.map(sanitizeTeamData);
+  return response.json();
 }
 
 export async function GET() {
   try {
     let teams: TeamData[];
-    const currentTime = Date.now();
 
-    if (currentTime - lastUpdateTime >= 60000) {
-      if (USE_EXTERNAL_API) {
-        try {
-          teams = await getTeamsFromExternalAPI();
-        } catch (error) {
-          console.error("Error fetching from external API:", error);
-          teams = await readTeamsData();
-        }
-      } else {
-        teams = await readTeamsData();
-      }
-
-      if (teams.length > 0) {
-        teams = teams.map(updateTeamPosition);
-        await writeTeamsData(teams);
-      } else {
-        console.warn("No team data available. Using empty array.");
-      }
-
-      lastUpdateTime = currentTime;
+    if (USE_EXTERNAL_API) {
+      teams = await getTeamsFromExternalAPI();
     } else {
       teams = await readTeamsData();
+      teams = teams.map(updateTeamPosition);
+      await writeTeamsData(teams);
     }
 
     return NextResponse.json(teams);
@@ -142,19 +79,14 @@ export async function GET() {
 
     if (error instanceof Error) {
       errorMessage = error.message;
+
       if (process.env.NODE_ENV === "development") {
         errorDetails = { stack: error.stack };
       }
     }
 
-    const lastKnownGoodState = await readTeamsData();
-
     return NextResponse.json(
-      {
-        error: errorMessage,
-        details: errorDetails,
-        teams: lastKnownGoodState,
-      },
+      { error: errorMessage, details: errorDetails },
       { status: 500 }
     );
   }

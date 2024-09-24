@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { useMap, Marker, Popup, Polyline, CircleMarker } from "react-leaflet";
 import L from "leaflet";
 import { TeamData } from "../app/api/teams/route";
@@ -13,11 +13,11 @@ import styles from "../styles/TeamMapsElements.module.css";
 interface TeamMapElementsProps {
   team: TeamData;
   isSelected: boolean;
-  onTeamClick: (team: TeamData) => void;
+  onTeamSelect: (teamId: number | null) => void;
 }
 
 const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
-  ({ team, isSelected, onTeamClick }) => {
+  ({ team, isSelected, onTeamSelect }) => {
     const map = useMap();
     const markerRef = useRef<L.Marker>(null);
     const popupRef = useRef<L.Popup>(null);
@@ -26,9 +26,14 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
       return isSelected ? "red" : getRouteColor(team.route);
     }, []);
 
-    const teamColor = getTeamColor(team, isSelected);
-    const lastPosition =
-      team.routeCoordinates[team.routeCoordinates.length - 1];
+    const teamColor = useMemo(
+      () => getTeamColor(team, isSelected),
+      [getTeamColor, team, isSelected]
+    );
+    const lastPosition = useMemo(
+      () => team.routeCoordinates[team.routeCoordinates.length - 1],
+      [team.routeCoordinates]
+    );
 
     const getDorsalIcon = useCallback(
       (team: TeamData, isSelected: boolean) => {
@@ -51,59 +56,74 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
     );
 
     useEffect(() => {
-      if (isSelected && markerRef.current && popupRef.current) {
-        const marker = markerRef.current;
-        const popup = popupRef.current;
+      const marker = markerRef.current;
+      const popup = popupRef.current;
+      if (!marker || !popup) return;
 
-        marker.bindPopup(popup);
+      marker.setIcon(getDorsalIcon(team, isSelected));
 
-        requestAnimationFrame(() => {
-          marker.openPopup();
-          map.panTo([lastPosition.lat, lastPosition.lng], {
-            animate: true,
-            duration: 0.5,
-          });
+      const handlePopupClose = () => {
+        onTeamSelect(null);
+      };
+
+      popup.on("remove", handlePopupClose);
+
+      if (isSelected) {
+        marker.openPopup();
+        map.panTo([lastPosition.lat, lastPosition.lng], {
+          animate: true,
+          duration: 0.5,
         });
+      } else {
+        marker.closePopup();
       }
-    }, [isSelected, lastPosition.lat, lastPosition.lng, map]);
+
+      return () => {
+        popup.off("remove", handlePopupClose);
+      };
+    }, [isSelected, getDorsalIcon, team, lastPosition, map, onTeamSelect]);
+
+    const eventHandlers = useMemo(
+      () => ({
+        click: () => {
+          onTeamSelect(team.id);
+        },
+      }),
+      [onTeamSelect, team.id]
+    );
 
     return (
       <>
         <Polyline
-          key={`polyline-${team.id}-${isSelected}`}
           positions={team.routeCoordinates.map((coord) => [
             coord.lat,
             coord.lng,
           ])}
-          color={teamColor}
-          weight={3}
-          opacity={0.7}
-          eventHandlers={{
-            click: () => onTeamClick(team),
-          }}
+          pathOptions={{ color: teamColor, weight: 3, opacity: 0.7 }}
         />
         <CircleMarker
-          key={`circle-${team.id}-${isSelected}`}
           center={[lastPosition.lat, lastPosition.lng]}
-          radius={3}
-          color={teamColor}
-          fillColor={teamColor}
-          fillOpacity={1}
-          weight={2}
-          eventHandlers={{
-            click: () => onTeamClick(team),
+          pathOptions={{
+            color: teamColor,
+            fillColor: teamColor,
+            fillOpacity: 1,
+            weight: 2,
           }}
+          radius={3}
         />
         <Marker
-          key={`marker-${team.id}-${isSelected}`}
           position={[lastPosition.lat, lastPosition.lng]}
           icon={getDorsalIcon(team, isSelected)}
-          eventHandlers={{
-            click: () => onTeamClick(team),
-          }}
+          eventHandlers={eventHandlers}
           ref={markerRef}
         >
-          <Popup ref={popupRef} offset={[1.5, -12]}>
+          <Popup
+            ref={popupRef}
+            offset={[1.5, -12]}
+            eventHandlers={{
+              remove: () => onTeamSelect(null),
+            }}
+          >
             <div>
               Dorsal: <strong>{team.dorsal}</strong> <br />
               Nombre: {team.name} <br />
@@ -130,6 +150,13 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
           </Popup>
         </Marker>
       </>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.team.id === nextProps.team.id &&
+      prevProps.team.routeCoordinates === nextProps.team.routeCoordinates
     );
   }
 );

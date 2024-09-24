@@ -12,8 +12,6 @@ export function useTeamData() {
   const [error, setError] = useState<ErrorWithMessage | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -25,40 +23,31 @@ export function useTeamData() {
           });
         }
         const data: TeamData[] = await response.json();
-        if (isMounted) {
-          setTeams(data);
-          setError(null);
-        }
+        setTeams(data);
+        setError(null);
       } catch (err) {
         console.error("Error fetching team data:", err);
-        if (isMounted) {
-          if (err instanceof Error) {
-            setError({
-              message: err.message,
-              stack:
-                err.cause && typeof err.cause === "object"
-                  ? (err.cause as { stack?: string }).stack
-                  : err.stack,
-            });
-          } else {
-            setError({ message: "An unknown error occurred" });
-          }
+        if (err instanceof Error) {
+          setError({
+            message: err.message,
+            stack:
+              err.cause && typeof err.cause === "object"
+                ? (err.cause as { stack?: string }).stack
+                : err.stack,
+          });
+        } else {
+          setError({ message: "An unknown error occurred" });
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchData();
 
-    const intervalId = setInterval(fetchData, 60000);
+    const intervalId = setInterval(fetchData, 6000);
 
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, []);
 
   return { teams, loading, error };

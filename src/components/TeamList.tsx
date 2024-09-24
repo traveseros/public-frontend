@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import styles from "../styles/TeamList.module.css";
 import { TeamData } from "../app/api/teams/route";
 import {
@@ -10,35 +10,49 @@ import {
 
 interface TeamListProps {
   teams: TeamData[];
-  selectedTeam: TeamData | null;
-  onTeamClick: (team: TeamData) => void;
+  selectedTeamId: number | null;
+  onTeamSelect: (teamId: number) => void;
   routeFilters: string[];
   statusFilters: string[];
 }
 
 const TeamList: React.FC<TeamListProps> = ({
   teams,
-  selectedTeam,
-  onTeamClick,
+  selectedTeamId,
+  onTeamSelect,
   routeFilters,
   statusFilters,
 }) => {
+  const listRef = useRef<HTMLUListElement>(null);
+  const selectedItemRef = useRef<HTMLLIElement>(null);
+
   const filteredTeams = teams.filter(
     (team) =>
-      routeFilters.length > 0 &&
-      routeFilters.includes(team.route) &&
-      statusFilters.length > 0 &&
-      statusFilters.includes(team.status)
+      routeFilters.includes(team.route) && statusFilters.includes(team.status)
   );
 
-  if (
-    filteredTeams.length === 0 ||
-    routeFilters.length === 0 ||
-    statusFilters.length === 0
-  ) {
+  useEffect(() => {
+    if (selectedTeamId && selectedItemRef.current && listRef.current) {
+      selectedItemRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedTeamId]);
+
+  if (routeFilters.length === 0 || statusFilters.length === 0) {
     return (
       <div className={`${styles.legend} ${styles.noData}`}>
-        No hay equipos que mostrar con esos filtros.
+        Por favor, seleccione al menos un filtro de ruta y un filtro de estado
+        para ver los equipos.
+      </div>
+    );
+  }
+
+  if (filteredTeams.length === 0) {
+    return (
+      <div className={`${styles.legend} ${styles.noData}`}>
+        No hay equipos que coincidan con los filtros seleccionados.
       </div>
     );
   }
@@ -50,13 +64,14 @@ const TeamList: React.FC<TeamListProps> = ({
         {filteredTeams.length}{" "}
         {filteredTeams.length === 1 ? "equipo" : "equipos"}
       </h3>
-      <ul className={styles.teamList}>
+      <ul className={styles.teamList} ref={listRef}>
         {filteredTeams.map((team) => (
           <li
             key={team.id}
-            onClick={() => onTeamClick(team)}
+            ref={selectedTeamId === team.id ? selectedItemRef : null}
+            onClick={() => onTeamSelect(team.id)}
             className={`${styles.teamItem} ${
-              selectedTeam && selectedTeam.id === team.id ? styles.selected : ""
+              selectedTeamId === team.id ? styles.selected : ""
             }`}
             style={{ borderLeft: `4px solid ${getRouteColor(team.route)}` }}
           >

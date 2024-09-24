@@ -1,11 +1,5 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import React, { useState, useRef, useCallback, useMemo } from "react";
+import { MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
@@ -14,84 +8,83 @@ import { TeamData } from "../app/api/teams/route";
 import TeamMapElements from "./TeamMapElements";
 import TeamList from "./TeamList";
 import FilterButtons from "./FilterButtons";
-import LoadingSpinner from "./LoadingSpinner";
 import VisualError from "./VisualError";
 import CenterMapButton from "./CenterMapButton";
 
-const ChangeView: React.FC<{ center: [number, number] }> = ({ center }) => {
-  const map = useMap();
-  useEffect(() => {
+const ChangeView: React.FC<{ center: [number, number] }> = React.memo(
+  ({ center }) => {
+    const map = useMap();
     map.setView(center, map.getZoom());
-    map.invalidateSize();
-  }, [center, map]);
+    return null;
+  }
+);
+
+ChangeView.displayName = "ChangeView";
+
+const MapEventHandler: React.FC<{ onMapClick: () => void }> = ({
+  onMapClick,
+}) => {
+  useMapEvents({
+    click: onMapClick,
+  });
   return null;
 };
 
 const Map: React.FC = () => {
-  const { teams, loading, error } = useTeamData();
+  const { teams, error } = useTeamData();
   const mapRef = useRef<L.Map | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
-  const markerRefs = useRef<{ [key: number]: L.Marker }>({});
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [routeFilters, setRouteFilters] = useState<TeamData["route"][]>([]);
   const [statusFilters, setStatusFilters] = useState<TeamData["status"][]>([]);
 
-  useEffect(() => {
-    if (selectedTeam && mapRef.current) {
-      const lastPosition =
-        selectedTeam.routeCoordinates[selectedTeam.routeCoordinates.length - 1];
-      mapRef.current.panTo([lastPosition.lat, lastPosition.lng], {
-        animate: true,
-      });
-    }
-  }, [selectedTeam]);
+  const handleTeamSelect = useCallback((teamId: number | null) => {
+    setSelectedTeamId((prevSelectedTeamId) =>
+      prevSelectedTeamId === teamId ? null : teamId
+    );
+  }, []);
 
-  const handleTeamClick = useCallback(
-    (team: TeamData) => {
-      Object.values(markerRefs.current).forEach((marker) =>
-        marker.closePopup()
-      );
-
-      if (selectedTeam && selectedTeam.id === team.id) {
-        setSelectedTeam(null);
-      } else {
-        setSelectedTeam(team);
-        const lastPosition =
-          team.routeCoordinates[team.routeCoordinates.length - 1];
-        mapRef.current?.panTo([lastPosition.lat, lastPosition.lng], {
-          animate: true,
-        });
-
-        const marker = markerRefs.current[team.id];
-        if (marker) {
-          marker.openPopup();
-        }
-      }
-    },
-    [selectedTeam]
-  );
+  const handleMapClick = useCallback(() => {
+    setSelectedTeamId(null);
+  }, []);
 
   const filteredTeams = useMemo(() => {
+    if (routeFilters.length === 0 || statusFilters.length === 0) {
+      return [];
+    }
     return teams.filter(
       (team) =>
-        routeFilters.length > 0 &&
-        routeFilters.includes(team.route) &&
-        statusFilters.length > 0 &&
-        statusFilters.includes(team.status)
+        routeFilters.includes(team.route) && statusFilters.includes(team.status)
     );
   }, [teams, routeFilters, statusFilters]);
-
-  const shouldRenderTeams = routeFilters.length > 0 && statusFilters.length > 0;
 
   const initialCenter: [number, number] = [37.429731, -1.523433];
   const initialZoom = 15;
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  const selectedTeam = useMemo(() => {
+    return teams.find((team) => team.id === selectedTeamId) || null;
+  }, [teams, selectedTeamId]);
 
-  if (error) {
-    return <VisualError error={error} />;
-  }
+  const memoizedTeamMapElements = useMemo(() => {
+    if (routeFilters.length === 0 || statusFilters.length === 0) {
+      return null;
+    }
+    return filteredTeams.map((team) => (
+      <TeamMapElements
+        key={team.id}
+        team={team}
+        isSelected={team.id === selectedTeamId}
+        onTeamSelect={handleTeamSelect}
+      />
+    ));
+  }, [
+    filteredTeams,
+    selectedTeamId,
+    handleTeamSelect,
+    routeFilters,
+    statusFilters,
+  ]);
+
+  if (error) return <VisualError error={error} />;
 
   return (
     <div className={styles.mapContainer}>
@@ -118,16 +111,9 @@ const Map: React.FC = () => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {shouldRenderTeams &&
-          filteredTeams.map((team) => (
-            <TeamMapElements
-              key={team.id}
-              team={team}
-              isSelected={selectedTeam?.id === team.id}
-              onTeamClick={handleTeamClick}
-            />
-          ))}
+        {memoizedTeamMapElements}
         <CenterMapButton center={initialCenter} />
+        <MapEventHandler onMapClick={handleMapClick} />
       </MapContainer>
       <FilterButtons
         routeFilters={routeFilters}
@@ -137,9 +123,9 @@ const Map: React.FC = () => {
       />
       <div className={styles.teamListWrapper}>
         <TeamList
-          teams={teams}
-          selectedTeam={selectedTeam}
-          onTeamClick={handleTeamClick}
+          teams={filteredTeams}
+          selectedTeamId={selectedTeamId}
+          onTeamSelect={handleTeamSelect}
           routeFilters={routeFilters}
           statusFilters={statusFilters}
         />
@@ -148,4 +134,4 @@ const Map: React.FC = () => {
   );
 };
 
-export default Map;
+export default React.memo(Map);
