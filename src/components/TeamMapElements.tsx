@@ -83,13 +83,19 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
       };
     }, [isSelected, getDorsalIcon, team, lastPosition, map, onTeamSelect]);
 
+    const handleElementClick = useCallback(
+      (e: L.LeafletMouseEvent) => {
+        L.DomEvent.stopPropagation(e);
+        onTeamSelect(isSelected ? null : team.id);
+      },
+      [onTeamSelect, team.id, isSelected]
+    );
+
     const eventHandlers = useMemo(
       () => ({
-        click: () => {
-          onTeamSelect(team.id);
-        },
+        click: handleElementClick,
       }),
-      [onTeamSelect, team.id]
+      [handleElementClick]
     );
 
     return (
@@ -100,6 +106,7 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
             coord.lng,
           ])}
           pathOptions={{ color: teamColor, weight: 3, opacity: 0.7 }}
+          eventHandlers={eventHandlers}
         />
         <CircleMarker
           center={[lastPosition.lat, lastPosition.lng]}
@@ -110,6 +117,7 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
             weight: 2,
           }}
           radius={3}
+          eventHandlers={eventHandlers}
         />
         <Marker
           position={[lastPosition.lat, lastPosition.lng]}
@@ -117,13 +125,7 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
           eventHandlers={eventHandlers}
           ref={markerRef}
         >
-          <Popup
-            ref={popupRef}
-            offset={[1.5, -12]}
-            eventHandlers={{
-              remove: () => onTeamSelect(null),
-            }}
-          >
+          <Popup ref={popupRef} offset={[1.5, -12]}>
             <div>
               Dorsal: <strong>{team.dorsal}</strong> <br />
               Nombre: {team.name} <br />
