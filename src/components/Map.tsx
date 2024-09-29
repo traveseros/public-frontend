@@ -4,7 +4,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
 import { useTeamData } from "../hooks/useTeamData";
-import { TeamData } from "../app/api/teams/route";
+import { RouteType, TeamStatus } from "@/types/global";
 import TeamMapElements from "./TeamMapElements";
 import TeamList from "./TeamList";
 import FilterButtons from "./FilterButtons";
@@ -34,8 +34,8 @@ const Map: React.FC = () => {
   const { teams, error } = useTeamData();
   const mapRef = useRef<L.Map | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [routeFilters, setRouteFilters] = useState<TeamData["route"][]>([]);
-  const [statusFilters, setStatusFilters] = useState<TeamData["status"][]>([]);
+  const [routeFilters, setRouteFilters] = useState<RouteType[]>([]);
+  const [statusFilters, setStatusFilters] = useState<TeamStatus[]>([]);
 
   const handleTeamSelect = useCallback((teamId: number | null) => {
     setSelectedTeamId((prevSelectedTeamId) =>

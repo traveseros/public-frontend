@@ -1,27 +1,27 @@
 import { useState, useEffect } from "react";
-import { TeamData, ErrorWithMessage } from "@/types/global";
+import { RouteData, ErrorWithMessage } from "@/types/global";
 
-export function useTeamData() {
-  const [teams, setTeams] = useState<TeamData[]>([]);
+export function useRouteData() {
+  const [routes, setRoutes] = useState<RouteData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ErrorWithMessage | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchRoutes = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/teams");
+        const response = await fetch("/api/routes");
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || "Network response was not ok", {
             cause: errorData.details,
           });
         }
-        const data: TeamData[] = await response.json();
-        setTeams(data);
+        const data: RouteData[] = await response.json();
+        setRoutes(data);
         setError(null);
       } catch (err) {
-        console.error("Error fetching team data:", err);
+        console.error("Error fetching route data:", err);
         if (err instanceof Error) {
           setError({
             message: err.message,
@@ -38,12 +38,8 @@ export function useTeamData() {
       }
     };
 
-    fetchData();
-
-    const intervalId = setInterval(fetchData, 60000);
-
-    return () => clearInterval(intervalId);
+    fetchRoutes();
   }, []);
 
-  return { teams, loading, error };
+  return { routes, loading, error };
 }

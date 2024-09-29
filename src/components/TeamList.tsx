@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styles from "../styles/TeamList.module.css";
-import { TeamData } from "../app/api/teams/route";
+import { TeamData, RouteType, TeamStatus } from "@/types/global";
 import {
   getRouteColor,
   getRouteDisplayName,
@@ -12,8 +12,8 @@ interface TeamListProps {
   teams: TeamData[];
   selectedTeamId: number | null;
   onTeamSelect: (teamId: number) => void;
-  routeFilters: string[];
-  statusFilters: string[];
+  routeFilters: RouteType[];
+  statusFilters: TeamStatus[];
 }
 
 const TeamList: React.FC<TeamListProps> = ({

@@ -1,20 +1,13 @@
 import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-
-export interface Coordinate {
-  lat: number;
-  lng: number;
-}
-
-export interface TeamData {
-  id: number;
-  dorsal: number;
-  name: string;
-  route: "family" | "long" | "short";
-  status: "not started" | "in progress" | "warning" | "dangerous" | "finished";
-  routeCoordinates: Coordinate[];
-}
+import {
+  ROUTE_TYPES,
+  TEAM_STATUSES,
+  TeamData,
+  Coordinate,
+  ErrorWithMessage,
+} from "@/types/global";
 
 const DATA_FILE = path.join(process.cwd(), "data", "teams.json");
 const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
@@ -58,24 +51,75 @@ async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
   return response.json();
 }
 
+function validateTeamData(team: TeamData): boolean {
+  return (
+    typeof team.id === "number" &&
+    typeof team.dorsal === "number" &&
+    typeof team.name === "string" &&
+    Object.values(ROUTE_TYPES).includes(team.route) &&
+    Object.values(TEAM_STATUSES).includes(team.status) &&
+    Array.isArray(team.routeCoordinates) &&
+    team.routeCoordinates.every(
+      (coord: Coordinate) =>
+        typeof coord.lat === "number" &&
+        typeof coord.lng === "number" &&
+        coord.lat >= -90 &&
+        coord.lat <= 90 &&
+        coord.lng >= -180 &&
+        coord.lng <= 180
+    )
+  );
+}
+
+function processTeams(newTeams: TeamData[], oldTeams: TeamData[]): TeamData[] {
+  const processedTeams: TeamData[] = [];
+  const seenIds = new Set();
+
+  for (const team of newTeams) {
+    if (validateTeamData(team) && !seenIds.has(team.id)) {
+      processedTeams.push(team);
+      seenIds.add(team.id);
+    } else {
+      console.warn(`Invalid or duplicate team data: ${JSON.stringify(team)}`);
+    }
+  }
+
+  if (processedTeams.length === 0) {
+    console.warn("No valid new team data. Using old data.");
+    return oldTeams;
+  }
+
+  for (const oldTeam of oldTeams) {
+    if (!seenIds.has(oldTeam.id)) {
+      processedTeams.push(oldTeam);
+      seenIds.add(oldTeam.id);
+    }
+  }
+
+  return processedTeams;
+}
+
 export async function GET() {
   try {
-    let teams: TeamData[];
+    const oldTeams: TeamData[] = await readTeamsData();
+    let newTeams: TeamData[];
 
     if (USE_EXTERNAL_API) {
-      teams = await getTeamsFromExternalAPI();
+      newTeams = await getTeamsFromExternalAPI();
     } else {
-      teams = await readTeamsData();
-      teams = teams.map(updateTeamPosition);
-      await writeTeamsData(teams);
+      newTeams = oldTeams.map(updateTeamPosition);
     }
 
-    return NextResponse.json(teams);
+    const processedTeams = processTeams(newTeams, oldTeams);
+
+    await writeTeamsData(processedTeams);
+
+    return NextResponse.json(processedTeams);
   } catch (error) {
     console.error("Error handling GET request:", error);
 
     let errorMessage = "Internal Server Error";
-    let errorDetails = {};
+    let errorDetails: Partial<ErrorWithMessage> = {};
 
     if (error instanceof Error) {
       errorMessage = error.message;

@@ -1,10 +1,6 @@
 import React from "react";
 import styles from "../styles/VisualError.module.css";
-
-interface ErrorWithMessage {
-  message: string;
-  stack?: string;
-}
+import { ErrorWithMessage } from "@/types/global";
 
 type ErrorProps = {
   error: unknown;

@@ -1,72 +1,77 @@
-import { TeamData } from "../../api/teams/route";
+import {
+  RouteType,
+  TeamStatus,
+  ROUTE_TYPES,
+  TEAM_STATUSES,
+} from "@/types/global";
 
-export const getRouteColor = (route: TeamData["route"]): string => {
+export const getRouteColor = (route: RouteType): string => {
   switch (route) {
-    case "family":
+    case ROUTE_TYPES.FAMILY:
       return "teal";
-    case "short":
+    case ROUTE_TYPES.SHORT:
       return "gold";
-    case "long":
+    case ROUTE_TYPES.LONG:
       return "violet";
     default:
       return "blue";
   }
 };
 
-export const getRouteDisplayName = (route: TeamData["route"]): string => {
+export const getRouteDisplayName = (route: RouteType): string => {
   switch (route) {
-    case "family":
+    case ROUTE_TYPES.FAMILY:
       return "Familiar";
-    case "short":
+    case ROUTE_TYPES.SHORT:
       return "Corta";
-    case "long":
+    case ROUTE_TYPES.LONG:
       return "Larga";
     default:
       return route;
   }
 };
 
-export const getStatusColor = (status: TeamData["status"]): string => {
+export const getStatusColor = (status: TeamStatus): string => {
   switch (status) {
-    case "dangerous":
+    case TEAM_STATUSES.DANGEROUS:
       return "red";
-    case "warning":
+    case TEAM_STATUSES.WARNING:
       return "orange";
-    case "in progress":
+    case TEAM_STATUSES.IN_PROGRESS:
       return "green";
     default:
       return "inherit";
   }
 };
 
-export const getStatusDisplayName = (status: TeamData["status"]): string => {
+export const getStatusDisplayName = (status: TeamStatus): string => {
   switch (status) {
-    case "not started":
+    case TEAM_STATUSES.NOT_STARTED:
       return "No iniciado";
-    case "in progress":
+    case TEAM_STATUSES.IN_PROGRESS:
       return "En progreso";
-    case "warning":
+    case TEAM_STATUSES.WARNING:
       return "Advertencia";
-    case "dangerous":
+    case TEAM_STATUSES.DANGEROUS:
       return "Peligro";
-    case "finished":
+    case TEAM_STATUSES.FINISHED:
       return "Finalizado";
     default:
       return status;
   }
 };
 
-export const getStatusIcon = (status: TeamData["status"]): string => {
+export const getStatusIcon = (status: TeamStatus): string => {
   switch (status) {
-    case "not started":
+    case TEAM_STATUSES.NOT_STARTED:
       return "🔵";
-    case "in progress":
+    case TEAM_STATUSES.IN_PROGRESS:
       return "🟢";
-    case "warning":
+    case TEAM_STATUSES.WARNING:
       return "🟠";
-    case "dangerous":
+    case TEAM_STATUSES.DANGEROUS:
       return "🔴";
-    case "finished":
+    case TEAM_STATUSES.FINISHED:
       return "✅";
     default:
       return "⚪";

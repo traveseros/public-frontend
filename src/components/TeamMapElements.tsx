@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { useMap, Marker, Popup, Polyline, CircleMarker } from "react-leaflet";
 import L from "leaflet";
-import { TeamData } from "../app/api/teams/route";
+import { TeamData, TEAM_STATUSES } from "@/types/global";
 import {
   getRouteColor,
   getRouteDisplayName,
@@ -136,7 +136,8 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
                 style={{
                   backgroundColor: getStatusColor(team.status),
                   color:
-                    team.status === "dangerous" || team.status === "in progress"
+                    team.status === TEAM_STATUSES.DANGEROUS ||
+                    team.status === TEAM_STATUSES.IN_PROGRESS
                       ? "white"
                       : "black",
                   padding: "2px 5px",

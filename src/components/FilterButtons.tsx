@@ -1,5 +1,10 @@
 import React, { useEffect } from "react";
-import { TeamData } from "../app/api/teams/route";
+import {
+  ROUTE_TYPES,
+  TEAM_STATUSES,
+  RouteType,
+  TeamStatus,
+} from "@/types/global";
 import {
   getRouteDisplayName,
   getStatusDisplayName,
@@ -7,10 +12,10 @@ import {
 import styles from "../styles/FilterButtons.module.css";
 
 interface FilterButtonsProps {
-  routeFilters: TeamData["route"][];
-  statusFilters: TeamData["status"][];
-  onRouteFiltersChange: (routes: TeamData["route"][]) => void;
-  onStatusFiltersChange: (statuses: TeamData["status"][]) => void;
+  routeFilters: RouteType[];
+  statusFilters: TeamStatus[];
+  onRouteFiltersChange: (routes: RouteType[]) => void;
+  onStatusFiltersChange: (statuses: TeamStatus[]) => void;
 }
 
 const FilterButtons: React.FC<FilterButtonsProps> = ({
@@ -19,14 +24,8 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
   onRouteFiltersChange,
   onStatusFiltersChange,
 }) => {
-  const routes: TeamData["route"][] = ["family", "short", "long"];
-  const statuses: TeamData["status"][] = [
-    "not started",
-    "in progress",
-    "warning",
-    "dangerous",
-    "finished",
-  ];
+  const routes = Object.values(ROUTE_TYPES);
+  const statuses = Object.values(TEAM_STATUSES);
 
   useEffect(() => {
     if (routeFilters.length === 0) {
@@ -37,14 +36,14 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
     }
   }, []);
 
-  const toggleRouteFilter = (route: TeamData["route"]) => {
+  const toggleRouteFilter = (route: RouteType) => {
     const updatedFilters = routeFilters.includes(route)
       ? routeFilters.filter((f) => f !== route)
       : [...routeFilters, route];
     onRouteFiltersChange(updatedFilters);
   };
 
-  const toggleStatusFilter = (status: TeamData["status"]) => {
+  const toggleStatusFilter = (status: TeamStatus) => {
     const updatedFilters = statusFilters.includes(status)
       ? statusFilters.filter((f) => f !== status)
       : [...statusFilters, status];
