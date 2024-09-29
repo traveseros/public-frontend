@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import Table from "../../components/Table";
+import SharedDataContainer from "../../components/SharedDataContainer";
 
-export default function TablePage() {
-  return (
-    <div>
-      <Table />
-    </div>
-  );
-}
+const TablePage: React.FC = () => {
+  return <SharedDataContainer showMap={false} />;
+};
+
+TablePage.displayName = "TablePage";
+
+export default TablePage;

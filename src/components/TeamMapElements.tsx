@@ -147,8 +147,7 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
                 {getStatusDisplayName(team.status)}
               </span>
               <br />
-              Lat: {lastPosition.lat.toFixed(4)}, Lon:{" "}
-              {lastPosition.lng.toFixed(4)}
+              Lat: {lastPosition.lat}, Lon: {lastPosition.lng}
             </div>
           </Popup>
         </Marker>

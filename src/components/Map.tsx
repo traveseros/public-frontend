@@ -1,15 +1,22 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useContext,
+} from "react";
 import { MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
-import { useTeamData } from "../hooks/useTeamData";
+import { useRouteData } from "../hooks/useRouteData";
 import { RouteType, TeamStatus } from "@/types/global";
 import TeamMapElements from "./TeamMapElements";
+import RouteMapElements from "./RouteMapElements";
 import TeamList from "./TeamList";
 import FilterButtons from "./FilterButtons";
-import VisualError from "./VisualError";
-import CenterMapButton from "./CenterMapButton";
+import { TeamContext } from "./SharedDataContainer";
+import MapControlsWrapper from "./MapControlsWrapper";
 
 const ChangeView: React.FC<{ center: [number, number] }> = React.memo(
   ({ center }) => {
@@ -31,7 +38,8 @@ const MapEventHandler: React.FC<{ onMapClick: () => void }> = ({
 };
 
 const Map: React.FC = () => {
-  const { teams, error } = useTeamData();
+  const { teams, refetch } = useContext(TeamContext);
+  const { routes, loading: routesLoading, error: routesError } = useRouteData();
   const mapRef = useRef<L.Map | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [routeFilters, setRouteFilters] = useState<RouteType[]>([]);
@@ -84,8 +92,6 @@ const Map: React.FC = () => {
     statusFilters,
   ]);
 
-  if (error) return <VisualError error={error} />;
-
   return (
     <div className={styles.mapContainer}>
       <MapContainer
@@ -112,7 +118,12 @@ const Map: React.FC = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {memoizedTeamMapElements}
-        <CenterMapButton center={initialCenter} />
+        {!routesLoading && !routesError && <RouteMapElements routes={routes} />}
+        <MapControlsWrapper
+          center={initialCenter}
+          initialTime={60}
+          onRefetch={refetch}
+        />
         <MapEventHandler onMapClick={handleMapClick} />
       </MapContainer>
       <FilterButtons

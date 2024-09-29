@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { useMap } from "react-leaflet";
 import L from "leaflet";
 import styles from "../styles/CenterMapButton.module.css";
 import HomeIcon from "./icons/HomeIcon";
@@ -7,10 +6,10 @@ import Tooltip from "./Tooltip";
 
 interface CenterMapButtonProps {
   center: [number, number];
+  map: L.Map;
 }
 
-const CenterMapButton: React.FC<CenterMapButtonProps> = ({ center }) => {
-  const map = useMap();
+const CenterMapButton: React.FC<CenterMapButtonProps> = ({ center, map }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

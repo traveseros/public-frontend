@@ -31,6 +31,7 @@ export interface TeamData {
 }
 
 export interface RouteData {
+  id: number;
   type: RouteType;
   coordinates: Coordinate[];
 }

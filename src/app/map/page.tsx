@@ -2,15 +2,16 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import LoadingSpinner from "../../components/LoadingSpinner";
 
-const MapWithNoSSR = dynamic(() => import("../../components/Map"), {
-  ssr: false,
-  loading: () => <LoadingSpinner />,
-});
+const SharedDataContainerWithNoSSR = dynamic(
+  () => import("../../components/SharedDataContainer"),
+  {
+    ssr: false,
+  }
+);
 
 const MapPage: React.FC = React.memo(() => {
-  return <MapWithNoSSR />;
+  return <SharedDataContainerWithNoSSR showMap={true} />;
 });
 
 MapPage.displayName = "MapPage";

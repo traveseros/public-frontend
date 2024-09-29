@@ -1,20 +1,14 @@
 import fs from "fs/promises";
 import path from "path";
 import { faker } from "@faker-js/faker";
-
-interface Coordinate {
-  lat: number;
-  lng: number;
-}
-
-interface TeamData {
-  id: number;
-  dorsal: number;
-  name: string;
-  route: "family" | "long" | "short";
-  status: "not started" | "in progress" | "warning" | "dangerous" | "finished";
-  routeCoordinates: Coordinate[];
-}
+import {
+  ROUTE_TYPES,
+  TEAM_STATUSES,
+  RouteType,
+  TeamStatus,
+  Coordinate,
+  TeamData,
+} from "../src/types/global";
 
 function generateRandomTeams(count: number): TeamData[] {
   const teams: TeamData[] = [];
@@ -32,14 +26,12 @@ function generateRandomTeams(count: number): TeamData[] {
       id: i,
       dorsal: dorsal,
       name: faker.person.firstName(),
-      route: faker.helpers.arrayElement(["family", "long", "short"]),
-      status: faker.helpers.arrayElement([
-        "not started",
-        "in progress",
-        "warning",
-        "dangerous",
-        "finished",
-      ]),
+      route: faker.helpers.arrayElement(
+        Object.values(ROUTE_TYPES)
+      ) as RouteType,
+      status: faker.helpers.arrayElement(
+        Object.values(TEAM_STATUSES)
+      ) as TeamStatus,
       routeCoordinates: [baseCoordinate],
     };
 

@@ -1,45 +1,45 @@
-import { useState, useEffect } from "react";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { RouteData, ErrorWithMessage } from "@/types/global";
 
-export function useRouteData() {
-  const [routes, setRoutes] = useState<RouteData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ErrorWithMessage | null>(null);
+const fetchRoutes = async (): Promise<RouteData[]> => {
+  const response = await fetch("/api/routes");
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Network response was not ok");
+  }
+  return response.json();
+};
 
-  useEffect(() => {
-    const fetchRoutes = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/routes");
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Network response was not ok", {
-            cause: errorData.details,
-          });
-        }
-        const data: RouteData[] = await response.json();
-        setRoutes(data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching route data:", err);
-        if (err instanceof Error) {
-          setError({
-            message: err.message,
-            stack:
-              err.cause && typeof err.cause === "object"
-                ? (err.cause as { stack?: string }).stack
-                : err.stack,
-          });
-        } else {
-          setError({ message: "An unknown error occurred" });
-        }
-      } finally {
-        setLoading(false);
-      }
+export function useRouteData(): {
+  routes: RouteData[];
+  loading: boolean;
+  error: ErrorWithMessage | null;
+  refetch: () => Promise<UseQueryResult<RouteData[], ErrorWithMessage>>;
+} {
+  const {
+    data: routes = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery<RouteData[], ErrorWithMessage>({
+    queryKey: ["routes"],
+    queryFn: fetchRoutes,
+    retry: 3,
+  });
+
+  let formattedError: ErrorWithMessage | null = null;
+  if (error) {
+    formattedError = {
+      message:
+        error instanceof Error ? error.message : "An unknown error occurred",
+      stack: error instanceof Error ? error.stack : undefined,
     };
+  }
 
-    fetchRoutes();
-  }, []);
-
-  return { routes, loading, error };
+  return {
+    routes,
+    loading,
+    error: formattedError,
+    refetch,
+  };
 }

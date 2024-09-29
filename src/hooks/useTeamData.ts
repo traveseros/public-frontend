@@ -1,49 +1,49 @@
-import { useState, useEffect } from "react";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { TeamData, ErrorWithMessage } from "@/types/global";
 
-export function useTeamData() {
-  const [teams, setTeams] = useState<TeamData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ErrorWithMessage | null>(null);
+const fetchTeams = async (): Promise<TeamData[]> => {
+  const response = await fetch("/api/teams");
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Network response was not ok", {
+      cause: errorData.details,
+    });
+  }
+  return response.json();
+};
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/teams");
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Network response was not ok", {
-            cause: errorData.details,
-          });
-        }
-        const data: TeamData[] = await response.json();
-        setTeams(data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching team data:", err);
-        if (err instanceof Error) {
-          setError({
-            message: err.message,
-            stack:
-              err.cause && typeof err.cause === "object"
-                ? (err.cause as { stack?: string }).stack
-                : err.stack,
-          });
-        } else {
-          setError({ message: "An unknown error occurred" });
-        }
-      } finally {
-        setLoading(false);
-      }
+export function useTeamData(): {
+  teams: TeamData[];
+  loading: boolean;
+  error: ErrorWithMessage | null;
+  refetch: () => Promise<UseQueryResult<TeamData[], ErrorWithMessage>>;
+} {
+  const {
+    data: teams = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery<TeamData[], ErrorWithMessage>({
+    queryKey: ["teams"],
+    queryFn: fetchTeams,
+    refetchInterval: 6000,
+    refetchIntervalInBackground: true,
+    retry: 3,
+  });
+
+  let formattedError: ErrorWithMessage | null = null;
+  if (error) {
+    formattedError = {
+      message:
+        error instanceof Error ? error.message : "An unknown error occurred",
+      stack: error instanceof Error ? error.stack : undefined,
     };
+  }
 
-    fetchData();
-
-    const intervalId = setInterval(fetchData, 60000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  return { teams, loading, error };
+  return {
+    teams,
+    loading,
+    error: formattedError,
+    refetch,
+  };
 }
