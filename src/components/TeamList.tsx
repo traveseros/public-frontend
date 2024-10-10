@@ -40,61 +40,75 @@ const TeamList: React.FC<TeamListProps> = ({
     }
   }, [selectedTeamId]);
 
-  if (routeFilters.length === 0 || statusFilters.length === 0) {
-    return (
-      <div className={`${styles.legend} ${styles.noData}`}>
-        Por favor, seleccione al menos un filtro de ruta y un filtro de estado
-        para ver los equipos.
-      </div>
-    );
-  }
+  const renderContent = () => {
+    if (routeFilters.length === 0 || statusFilters.length === 0) {
+      return (
+        <div className={styles.noData}>
+          Por favor, seleccione al menos un filtro de ruta y un filtro de estado
+          para ver los equipos.
+        </div>
+      );
+    }
 
-  if (filteredTeams.length === 0) {
+    if (filteredTeams.length === 0) {
+      return (
+        <div className={styles.noData}>
+          No hay equipos que coincidan con los filtros seleccionados.
+        </div>
+      );
+    }
+
     return (
-      <div className={`${styles.legend} ${styles.noData}`}>
-        No hay equipos que coincidan con los filtros seleccionados.
-      </div>
+      <ul className={styles.teamList} ref={listRef}>
+        {filteredTeams.map((team) => {
+          const routeColor = getRouteColor(team.route);
+          return (
+            <li
+              key={team.id}
+              ref={selectedTeamId === team.id ? selectedItemRef : null}
+              onClick={() => onTeamSelect(team.id)}
+              className={`${styles.teamItem} ${
+                selectedTeamId === team.id ? styles.selected : ""
+              }`}
+              style={{
+                borderLeft: `4px solid ${routeColor}`,
+                boxShadow: `inset 0 0 5px ${routeColor}`,
+              }}
+            >
+              <div className={styles.teamInfo}>
+                <span
+                  className={styles.teamName}
+                  title={`${team.dorsal} - ${team.name}`}
+                >
+                  {team.dorsal} - {team.name}
+                </span>
+                <span className={styles.teamRoute}>
+                  ({getRouteDisplayName(team.route)})
+                </span>
+              </div>
+              <span
+                className={styles.teamStatus}
+                title={getStatusDisplayName(team.status)}
+              >
+                {getStatusIcon(team.status)} {getStatusDisplayName(team.status)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     );
-  }
+  };
 
   return (
     <div className={styles.legend}>
-      <h3 className={styles.teamCount}>
-        {"Mostrando "}
-        {filteredTeams.length}{" "}
-        {filteredTeams.length === 1 ? "equipo" : "equipos"}
-      </h3>
-      <ul className={styles.teamList} ref={listRef}>
-        {filteredTeams.map((team) => (
-          <li
-            key={team.id}
-            ref={selectedTeamId === team.id ? selectedItemRef : null}
-            onClick={() => onTeamSelect(team.id)}
-            className={`${styles.teamItem} ${
-              selectedTeamId === team.id ? styles.selected : ""
-            }`}
-            style={{ borderLeft: `4px solid ${getRouteColor(team.route)}` }}
-          >
-            <div className={styles.teamInfo}>
-              <span
-                className={styles.teamName}
-                title={`${team.dorsal} - ${team.name}`}
-              >
-                {team.dorsal} - {team.name}
-              </span>
-              <span className={styles.teamRoute}>
-                ({getRouteDisplayName(team.route)})
-              </span>
-            </div>
-            <span
-              className={styles.teamStatus}
-              title={getStatusDisplayName(team.status)}
-            >
-              {getStatusIcon(team.status)} {getStatusDisplayName(team.status)}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className={styles.fixedHeader}>
+        <h3 className={styles.teamCount}>
+          {"Mostrando "}
+          {filteredTeams.length}{" "}
+          {filteredTeams.length === 1 ? "equipo" : "equipos"}
+        </h3>
+      </div>
+      <div className={styles.scrollableContent}>{renderContent()}</div>
     </div>
   );
 };
