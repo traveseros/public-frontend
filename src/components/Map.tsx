@@ -1,4 +1,10 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   MapContainer,
   TileLayer,
@@ -10,9 +16,11 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
 import { useRouteData } from "../hooks/useRouteData";
+import { useCheckpointData } from "../hooks/useCheckpointData";
 import { RouteType, TeamStatus, TeamData } from "@/types/global";
 import TeamMapElements from "./TeamMapElements";
 import RouteMapElements from "./RouteMapElements";
+import CheckpointMapElements from "./CheckpointMapElements";
 import TeamList from "./TeamList";
 import FilterButtons from "./FilterButtons";
 import MapControlsWrapper from "./MapControlsWrapper";
@@ -48,12 +56,29 @@ interface MapProps {
   >;
 }
 
+interface ExtendedIconDefault extends L.Icon.Default {
+  _getIconUrl?: string;
+}
+
 const Map: React.FC<MapProps> = ({ teams, refetch }) => {
-  const { routes, loading: routesLoading, error: routesError } = useRouteData();
+  const { routes } = useRouteData();
+  const { checkpoints } = useCheckpointData();
   const mapRef = useRef<L.Map | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [routeFilters, setRouteFilters] = useState<RouteType[]>([]);
   const [statusFilters, setStatusFilters] = useState<TeamStatus[]>([]);
+
+  const memoizedRoutes = useMemo(() => routes, [routes]);
+  const memoizedCheckpoints = useMemo(() => checkpoints, [checkpoints]);
+
+  useEffect(() => {
+    delete (L.Icon.Default.prototype as ExtendedIconDefault)._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+      iconUrl: require("leaflet/dist/images/marker-icon.png"),
+      shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
+    });
+  }, []);
 
   const handleTeamSelect = useCallback((teamId: number | null) => {
     setSelectedTeamId((prevSelectedTeamId) =>
@@ -138,10 +163,11 @@ const Map: React.FC<MapProps> = ({ teams, refetch }) => {
             fillColor: "#f03",
             fillOpacity: 0.5,
           }}
-        ></Circle>
+        />
         {memoizedTeamMapElements}
-        {!routesLoading && !routesError && routes && (
-          <RouteMapElements routes={routes} />
+        {memoizedRoutes && <RouteMapElements routes={memoizedRoutes} />}
+        {memoizedCheckpoints && (
+          <CheckpointMapElements checkpoints={memoizedCheckpoints} />
         )}
         <MapControlsWrapper center={initialCenter} onRefetch={refetch} />
         <MapEventHandler onMapClick={handleMapClick} />

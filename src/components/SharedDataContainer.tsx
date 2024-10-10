@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import LoadingSpinner from "./LoadingSpinner";
 import { TeamData, ErrorWithMessage } from "@/types/global";
 import VisualError from "./VisualError";
+import DismissableError from "./DismissableError";
 import { UseQueryResult } from "@tanstack/react-query";
 
 const LazyMap = dynamic(() => import("./Map"), {
@@ -77,17 +78,7 @@ const SharedDataContainer: React.FC<SharedDataContainerProps> = React.memo(
     return (
       <TeamContext.Provider value={contextValue}>
         <div style={{ position: "relative" }}>
-          {error && (
-            <div
-              style={{
-                backgroundColor: "yellow",
-                padding: "10px",
-                marginBottom: "10px",
-              }}
-            >
-              Warning: {error.message}
-            </div>
-          )}
+          {error && <DismissableError error={error} />}
           {showMap ? (
             <LazyMap teams={normalizedTeams} refetch={refetch} />
           ) : (

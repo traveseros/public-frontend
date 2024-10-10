@@ -1,13 +1,9 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { useMap, Marker, Popup, Polyline, CircleMarker } from "react-leaflet";
 import L from "leaflet";
-import { TeamData, TEAM_STATUSES } from "@/types/global";
-import {
-  getRouteColor,
-  getRouteDisplayName,
-  getStatusColor,
-  getStatusDisplayName,
-} from "../app/lib/teams/utils";
+import TeamPopup from "./TeamPopup";
+import { TeamData } from "@/types/global";
+import { getRouteColor } from "../app/lib/teams/utils";
 import styles from "../styles/TeamMapsElements.module.css";
 
 interface TeamMapElementsProps {
@@ -126,29 +122,7 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
           ref={markerRef}
         >
           <Popup ref={popupRef} offset={[1.5, -12]}>
-            <div>
-              Dorsal: <strong>{team.dorsal}</strong> <br />
-              Nombre: {team.name} <br />
-              Ruta: {getRouteDisplayName(team.route)}
-              <br />
-              Estado:{" "}
-              <span
-                style={{
-                  backgroundColor: getStatusColor(team.status),
-                  color:
-                    team.status === TEAM_STATUSES.DANGEROUS ||
-                    team.status === TEAM_STATUSES.IN_PROGRESS
-                      ? "white"
-                      : "black",
-                  padding: "2px 5px",
-                  borderRadius: "3px",
-                }}
-              >
-                {getStatusDisplayName(team.status)}
-              </span>
-              <br />
-              Lat: {lastPosition.lat}, Lon: {lastPosition.lng}
-            </div>
+            <TeamPopup team={team} lastPosition={lastPosition} />
           </Popup>
         </Marker>
       </>

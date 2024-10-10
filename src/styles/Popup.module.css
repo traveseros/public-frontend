@@ -1,0 +1,31 @@
+.popupContainer {
+  max-width: 250px;
+}
+
+.popupTitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #2c3e50;
+}
+
+.popupContent {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.popupLabel {
+  font-weight: 500;
+  color: #34495e;
+}
+
+.popupValue {
+  margin-left: 4px;
+}
+
+.popupStatus {
+  display: inline-block;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: 500;
+}

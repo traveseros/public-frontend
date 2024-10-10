@@ -36,6 +36,16 @@ export interface RouteData {
   coordinates: Coordinate[];
 }
 
+export type CheckpointType = (typeof ROUTE_TYPES)[keyof typeof ROUTE_TYPES];
+
+export interface CheckpointData {
+  id: number;
+  type: CheckpointType;
+  name: string;
+  group: string;
+  coordinates: Coordinate;
+}
+
 export interface ErrorWithMessage {
   message: string;
   stack?: string;

@@ -1,0 +1,172 @@
+[
+  {
+    "id": 1,
+    "type": "family",
+    "name": "Family Route Start",
+    "group": "C10,20,30",
+    "coordinates": {
+      "lat": 37.42975,
+      "lng": -1.523433
+    }
+  },
+  {
+    "id": 2,
+    "type": "family",
+    "name": "Family Midpoint 1",
+    "group": "C15",
+    "coordinates": {
+      "lat": 37.431214442706576,
+      "lng": -1.519013808825233
+    }
+  },
+  {
+    "id": 3,
+    "type": "family",
+    "name": "Family Route End",
+    "group": "C20",
+    "coordinates": {
+      "lat": 37.42713944953819,
+      "lng": -1.5130399700765027
+    }
+  },
+  {
+    "id": 4,
+    "type": "short",
+    "name": "Short Route Start",
+    "group": "C25",
+    "coordinates": {
+      "lat": 37.429735,
+      "lng": -1.523433
+    }
+  },
+  {
+    "id": 5,
+    "type": "short",
+    "name": "Short Midpoint 1",
+    "group": "C30",
+    "coordinates": {
+      "lat": 37.43604031849824,
+      "lng": -1.5035968852085742
+    }
+  },
+  {
+    "id": 6,
+    "type": "short",
+    "name": "Short Midpoint 2",
+    "group": "C35",
+    "coordinates": {
+      "lat": 37.42402029867949,
+      "lng": -1.4928275854614583
+    }
+  },
+  {
+    "id": 7,
+    "type": "short",
+    "name": "Short Route End",
+    "group": "C40",
+    "coordinates": {
+      "lat": 37.425535727233566,
+      "lng": -1.4949954251996525
+    }
+  },
+  {
+    "id": 8,
+    "type": "long",
+    "name": "Long Route Start",
+    "group": "C45",
+    "coordinates": {
+      "lat": 37.429731,
+      "lng": -1.523433
+    }
+  },
+  {
+    "id": 9,
+    "type": "long",
+    "name": "Long Midpoint 1",
+    "group": "C50",
+    "coordinates": {
+      "lat": 37.41542191210341,
+      "lng": -1.4794936578620204
+    }
+  },
+  {
+    "id": 10,
+    "type": "long",
+    "name": "Long Midpoint 2",
+    "group": "C55",
+    "coordinates": {
+      "lat": 37.430682569524286,
+      "lng": -1.4869727751017288
+    }
+  },
+  {
+    "id": 11,
+    "type": "long",
+    "name": "Long Midpoint 3",
+    "group": "C60",
+    "coordinates": {
+      "lat": 37.4531116453603,
+      "lng": -1.5125861511819017
+    }
+  },
+  {
+    "id": 12,
+    "type": "long",
+    "name": "Long Midpoint 4",
+    "group": "C65",
+    "coordinates": {
+      "lat": 37.44806771393257,
+      "lng": -1.5287089952711441
+    }
+  },
+  {
+    "id": 13,
+    "type": "long",
+    "name": "Long Route End",
+    "group": "C70",
+    "coordinates": {
+      "lat": 37.45212754358023,
+      "lng": -1.537050447151938
+    }
+  },
+  {
+    "id": 14,
+    "type": "family",
+    "name": "Family Rest Stop",
+    "group": "C12",
+    "coordinates": {
+      "lat": 37.42850041784616,
+      "lng": -1.5213319464668613
+    }
+  },
+  {
+    "id": 15,
+    "type": "short",
+    "name": "Short Route Water Station",
+    "group": "C32",
+    "coordinates": {
+      "lat": 37.441560873843116,
+      "lng": -1.5023200447563623
+    }
+  },
+  {
+    "id": 16,
+    "type": "long",
+    "name": "Long Route First Aid Station",
+    "group": "C52",
+    "coordinates": {
+      "lat": 37.44729262466329,
+      "lng": -1.492962313692225
+    }
+  },
+  {
+    "id": 17,
+    "type": "long",
+    "name": "Long Route Rest Area",
+    "group": "C62",
+    "coordinates": {
+      "lat": 37.43609615838235,
+      "lng": -1.5135839467122316
+    }
+  }
+]
