@@ -1,5 +1,11 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
-import { MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  useMap,
+  useMapEvents,
+  Circle,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
@@ -124,6 +130,15 @@ const Map: React.FC<MapProps> = ({ teams, refetch }) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <Circle
+          center={initialCenter}
+          radius={100}
+          pathOptions={{
+            color: "red",
+            fillColor: "#f03",
+            fillOpacity: 0.5,
+          }}
+        ></Circle>
         {memoizedTeamMapElements}
         {!routesLoading && !routesError && routes && (
           <RouteMapElements routes={routes} />
