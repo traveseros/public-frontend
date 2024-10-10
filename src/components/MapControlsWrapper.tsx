@@ -7,13 +7,16 @@ import { TeamData, ErrorWithMessage } from "@/types/global";
 
 interface MapControlsWrapperProps {
   center: [number, number];
-  initialTime?: number;
-  onRefetch: () => Promise<UseQueryResult<TeamData[], ErrorWithMessage>>;
+  onRefetch: () => Promise<
+    UseQueryResult<
+      { teams: TeamData[]; error?: ErrorWithMessage },
+      ErrorWithMessage
+    >
+  >;
 }
 
 const MapControlsWrapper: React.FC<MapControlsWrapperProps> = ({
   center,
-  initialTime,
   onRefetch,
 }) => {
   const map = useMap();
@@ -21,11 +24,7 @@ const MapControlsWrapper: React.FC<MapControlsWrapperProps> = ({
   return (
     <>
       <CenterMapButton center={center} map={map} />
-      <CountDownButton
-        initialTime={initialTime}
-        onRefetch={onRefetch}
-        map={map}
-      />
+      <CountDownButton onRefetch={onRefetch} map={map} />
     </>
   );
 };

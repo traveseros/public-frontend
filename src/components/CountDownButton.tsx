@@ -7,16 +7,23 @@ import { UseQueryResult } from "@tanstack/react-query";
 import { TeamData, ErrorWithMessage } from "@/types/global";
 
 interface CountDownButtonProps {
-  initialTime?: number;
-  onRefetch: () => Promise<UseQueryResult<TeamData[], ErrorWithMessage>>;
+  onRefetch: () => Promise<
+    UseQueryResult<
+      { teams: TeamData[]; error?: ErrorWithMessage },
+      ErrorWithMessage
+    >
+  >;
   map?: L.Map;
 }
 
 const CountDownButton: React.FC<CountDownButtonProps> = ({
-  initialTime = 60,
   onRefetch,
   map: externalMap,
 }) => {
+  const initialTime = process.env.NEXT_PUBLIC_REFETCH_INTERVAL
+    ? parseInt(process.env.NEXT_PUBLIC_REFETCH_INTERVAL, 10) / 1000
+    : 60;
+
   const [countdown, setCountdown] = useState(initialTime);
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -32,7 +39,6 @@ const CountDownButton: React.FC<CountDownButtonProps> = ({
       if (result.isError && result.error) {
         throw result.error;
       }
-      console.log("API call completed");
       setCountdown(initialTime);
       setIsActive(true);
     } catch (error) {

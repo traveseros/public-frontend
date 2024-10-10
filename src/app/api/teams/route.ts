@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import {
@@ -11,7 +11,6 @@ import {
 
 const DATA_FILE = path.join(process.cwd(), "data", "teams.json");
 const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
-const USE_EXTERNAL_API = process.env.USE_EXTERNAL_API === "true";
 
 async function readTeamsData(): Promise<TeamData[]> {
   try {
@@ -25,19 +24,6 @@ async function readTeamsData(): Promise<TeamData[]> {
 
 async function writeTeamsData(data: TeamData[]): Promise<void> {
   await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-function updateTeamPosition(team: TeamData): TeamData {
-  const lastPosition = team.routeCoordinates[team.routeCoordinates.length - 1];
-  const latChange = (Math.random() - 0.5) * 0.001;
-  const lonChange = (Math.random() - 0.5) * 0.001;
-  const newLat = Math.max(-90, Math.min(90, lastPosition.lat + latChange));
-  const newLon = lastPosition.lng + lonChange;
-
-  return {
-    ...team,
-    routeCoordinates: [...team.routeCoordinates, { lat: newLat, lng: newLon }],
-  };
 }
 
 async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
@@ -99,39 +85,81 @@ function processTeams(newTeams: TeamData[], oldTeams: TeamData[]): TeamData[] {
   return processedTeams;
 }
 
-export async function GET() {
+function findNewCoordinates(
+  routeCoordinates: Coordinate[],
+  lastKnownPoint: Coordinate
+): Coordinate[] {
+  const index = routeCoordinates.findIndex(
+    (coord) =>
+      coord.lat === lastKnownPoint.lat && coord.lng === lastKnownPoint.lng
+  );
+  return index !== -1 ? routeCoordinates.slice(index + 1) : routeCoordinates;
+}
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const lastKnownPoints: Record<number, Coordinate> = {};
+
+  searchParams.forEach((value, key) => {
+    if (key.startsWith("lastPoint[")) {
+      const id = parseInt(key.slice(10, -1));
+      const [lat, lng] = value.split(",").map(Number);
+      lastKnownPoints[id] = { lat, lng };
+    }
+  });
+
+  let apiError: Error | null = null;
+  let teams: TeamData[] = [];
+
   try {
-    const oldTeams: TeamData[] = await readTeamsData();
-    let newTeams: TeamData[];
-
-    if (USE_EXTERNAL_API) {
-      newTeams = await getTeamsFromExternalAPI();
-    } else {
-      newTeams = oldTeams.map(updateTeamPosition);
+    teams = await readTeamsData();
+    if (teams.length === 0) {
+      console.warn("No data in local JSON file.");
     }
+    const newTeams: TeamData[] = await getTeamsFromExternalAPI();
+    teams = processTeams(newTeams, teams);
+    await writeTeamsData(teams);
 
-    const processedTeams = processTeams(newTeams, oldTeams);
-
-    await writeTeamsData(processedTeams);
-
-    return NextResponse.json(processedTeams);
+    teams = teams.map((team) => ({
+      ...team,
+      routeCoordinates: lastKnownPoints[team.id]
+        ? findNewCoordinates(team.routeCoordinates, lastKnownPoints[team.id])
+        : team.routeCoordinates,
+    }));
   } catch (error) {
-    console.error("Error handling GET request:", error);
-
-    let errorMessage = "Internal Server Error";
-    let errorDetails: Partial<ErrorWithMessage> = {};
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-
-      if (process.env.NODE_ENV === "development") {
-        errorDetails = { stack: error.stack };
-      }
+    console.error("Error fetching data from external API:", error);
+    apiError =
+      error instanceof Error ? error : new Error("Unknown error occurred");
+    if (teams.length === 0) {
+      teams = await readTeamsData();
     }
-
-    return NextResponse.json(
-      { error: errorMessage, details: errorDetails },
-      { status: 500 }
-    );
   }
+
+  const response: {
+    teams: TeamData[];
+    error?: {
+      message: string;
+      details?: Partial<ErrorWithMessage>;
+    };
+  } = { teams };
+
+  if (apiError) {
+    response.error = {
+      message: "Error connecting to external API. Showing cached data.",
+      details: { stack: apiError.stack },
+    };
+  }
+
+  if (teams.length === 0) {
+    response.error = {
+      message: "No team data available",
+      details: {
+        stack:
+          "Both external API and local JSON file are empty or inaccessible.",
+      },
+    };
+    return NextResponse.json(response, { status: 404 });
+  }
+
+  return NextResponse.json(response, { status: apiError ? 206 : 200 });
 }

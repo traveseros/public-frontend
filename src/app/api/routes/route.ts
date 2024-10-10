@@ -55,10 +55,7 @@ export async function GET() {
 
     if (error instanceof Error) {
       errorResponse.message = error.message;
-
-      if (process.env.NODE_ENV === "development") {
-        errorResponse.stack = error.stack;
-      }
+      errorResponse.stack = error.stack;
     }
 
     return NextResponse.json(errorResponse, { status: 500 });

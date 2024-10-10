@@ -1,22 +1,17 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-  useContext,
-} from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
 import { useRouteData } from "../hooks/useRouteData";
-import { RouteType, TeamStatus } from "@/types/global";
+import { RouteType, TeamStatus, TeamData } from "@/types/global";
 import TeamMapElements from "./TeamMapElements";
 import RouteMapElements from "./RouteMapElements";
 import TeamList from "./TeamList";
 import FilterButtons from "./FilterButtons";
-import { TeamContext } from "./SharedDataContainer";
 import MapControlsWrapper from "./MapControlsWrapper";
+import { UseQueryResult } from "@tanstack/react-query";
+import { ErrorWithMessage } from "@/types/global";
 
 const ChangeView: React.FC<{ center: [number, number] }> = React.memo(
   ({ center }) => {
@@ -37,8 +32,17 @@ const MapEventHandler: React.FC<{ onMapClick: () => void }> = ({
   return null;
 };
 
-const Map: React.FC = () => {
-  const { teams, refetch } = useContext(TeamContext);
+interface MapProps {
+  teams: TeamData[];
+  refetch: () => Promise<
+    UseQueryResult<
+      { teams: TeamData[]; error?: ErrorWithMessage },
+      ErrorWithMessage
+    >
+  >;
+}
+
+const Map: React.FC<MapProps> = ({ teams, refetch }) => {
   const { routes, loading: routesLoading, error: routesError } = useRouteData();
   const mapRef = useRef<L.Map | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
@@ -65,8 +69,11 @@ const Map: React.FC = () => {
     );
   }, [teams, routeFilters, statusFilters]);
 
-  const initialCenter: [number, number] = [37.429731, -1.523433];
-  const initialZoom = 15;
+  const initialCenter: [number, number] = [
+    Number(process.env.NEXT_PUBLIC_INITIAL_CENTER_LAT),
+    Number(process.env.NEXT_PUBLIC_INITIAL_CENTER_LNG),
+  ];
+  const initialZoom = Number(process.env.NEXT_PUBLIC_INITIAL_ZOOM);
 
   const selectedTeam = useMemo(() => {
     return teams.find((team) => team.id === selectedTeamId) || null;
@@ -118,12 +125,10 @@ const Map: React.FC = () => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {memoizedTeamMapElements}
-        {!routesLoading && !routesError && <RouteMapElements routes={routes} />}
-        <MapControlsWrapper
-          center={initialCenter}
-          initialTime={60}
-          onRefetch={refetch}
-        />
+        {!routesLoading && !routesError && routes && (
+          <RouteMapElements routes={routes} />
+        )}
+        <MapControlsWrapper center={initialCenter} onRefetch={refetch} />
         <MapEventHandler onMapClick={handleMapClick} />
       </MapContainer>
       <FilterButtons

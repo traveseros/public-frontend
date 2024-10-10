@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useMemo } from "react";
 import { useTeamData } from "../hooks/useTeamData";
 import dynamic from "next/dynamic";
@@ -17,14 +15,19 @@ const LazyTable = dynamic(() => import("./Table"), {
 
 type TeamContextType = {
   teams: TeamData[];
-  refetch: () => Promise<UseQueryResult<TeamData[], ErrorWithMessage>>;
+  refetch: () => Promise<
+    UseQueryResult<
+      { teams: TeamData[]; error?: ErrorWithMessage },
+      ErrorWithMessage
+    >
+  >;
 };
 
 export const TeamContext = React.createContext<TeamContextType>({
   teams: [],
   refetch: async () =>
     ({ isError: false, error: null } as UseQueryResult<
-      TeamData[],
+      { teams: TeamData[]; error?: ErrorWithMessage },
       ErrorWithMessage
     >),
 });
@@ -48,22 +51,48 @@ const normalizeTeamData = (team: TeamData): TeamData => {
   };
 };
 
-const SharedDataContainer: React.FC<{ showMap?: boolean }> = React.memo(
+interface SharedDataContainerProps {
+  showMap?: boolean;
+}
+
+const SharedDataContainer: React.FC<SharedDataContainerProps> = React.memo(
   ({ showMap = false }) => {
     const { teams, loading, error, refetch } = useTeamData();
 
-    const normalizedTeams = useMemo(
-      () => teams.map(normalizeTeamData),
-      [teams]
+    const normalizedTeams = useMemo(() => {
+      return teams.map(normalizeTeamData);
+    }, [teams]);
+
+    const contextValue = useMemo(
+      () => ({ teams: normalizedTeams, refetch }),
+      [normalizedTeams, refetch]
     );
 
     if (loading) return <LoadingSpinner />;
-    if (error) return <VisualError error={error} />;
+
+    if (teams.length === 0) {
+      return <VisualError error={{ message: "No team data available" }} />;
+    }
 
     return (
-      <TeamContext.Provider value={{ teams: normalizedTeams, refetch }}>
+      <TeamContext.Provider value={contextValue}>
         <div style={{ position: "relative" }}>
-          {showMap ? <LazyMap /> : <LazyTable />}
+          {error && (
+            <div
+              style={{
+                backgroundColor: "yellow",
+                padding: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              Warning: {error.message}
+            </div>
+          )}
+          {showMap ? (
+            <LazyMap teams={normalizedTeams} refetch={refetch} />
+          ) : (
+            <LazyTable teams={normalizedTeams} />
+          )}
         </div>
       </TeamContext.Provider>
     );
