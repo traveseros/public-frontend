@@ -7,37 +7,23 @@ import {
   getSortedRowModel,
   flexRender,
   createColumnHelper,
+  FilterFn,
 } from "@tanstack/react-table";
+import { TeamData, RouteType, TeamStatus } from "@/types/global";
 import {
-  TeamData,
-  ROUTE_TYPES,
-  TEAM_STATUSES,
-  RouteType,
-  TeamStatus,
-} from "@/types/global";
+  getRouteDisplayName,
+  getStatusDisplayName,
+  getStatusIcon,
+} from "@/app/lib/teams/utils";
 import styles from "../styles/Table.module.css";
-import { useTeamData } from "../hooks/useTeamData";
-import LoadingSpinner from "./LoadingSpinner";
-import VisualError from "./VisualError";
 
-const Table: React.FC = () => {
-  const { teams, loading, error, refetch } = useTeamData();
+interface LazyTableProps {
+  teams: TeamData[];
+}
+
+const LazyTable: React.FC<LazyTableProps> = ({ teams }) => {
   const [globalFilter, setGlobalFilter] = useState("");
   const columnHelper = createColumnHelper<TeamData>();
-
-  const routeTypeLabels: Record<RouteType, string> = {
-    [ROUTE_TYPES.FAMILY]: "Familiar",
-    [ROUTE_TYPES.SHORT]: "Corta",
-    [ROUTE_TYPES.LONG]: "Larga",
-  };
-
-  const teamStatusLabels: Record<TeamStatus, string> = {
-    [TEAM_STATUSES.NOT_STARTED]: "No iniciado",
-    [TEAM_STATUSES.IN_PROGRESS]: "En progreso",
-    [TEAM_STATUSES.WARNING]: "Advertencia",
-    [TEAM_STATUSES.DANGEROUS]: "Peligro",
-    [TEAM_STATUSES.FINISHED]: "Finalizado",
-  };
 
   const columns = useMemo(
     () => [
@@ -51,11 +37,16 @@ const Table: React.FC = () => {
       }),
       columnHelper.accessor("route", {
         header: "Ruta",
-        cell: (info) => routeTypeLabels[info.getValue()],
+        cell: (info) => getRouteDisplayName(info.getValue()),
       }),
       columnHelper.accessor("status", {
         header: "Estado",
-        cell: (info) => teamStatusLabels[info.getValue()],
+        cell: (info) => (
+          <>
+            {getStatusIcon(info.getValue())}{" "}
+            {getStatusDisplayName(info.getValue())}
+          </>
+        ),
       }),
       columnHelper.accessor(
         (row) => row.routeCoordinates[row.routeCoordinates.length - 1].lat,
@@ -77,6 +68,33 @@ const Table: React.FC = () => {
     [columnHelper]
   );
 
+  const fuzzyFilter: FilterFn<TeamData> = (row, columnId, value) => {
+    const itemValue = row.getValue(columnId);
+    const searchValue = value.toLowerCase();
+
+    if (typeof itemValue === "number") {
+      return itemValue.toString().toLowerCase().includes(searchValue);
+    }
+
+    if (typeof itemValue === "string") {
+      return itemValue.toLowerCase().includes(searchValue);
+    }
+
+    if (columnId === "route") {
+      return getRouteDisplayName(itemValue as RouteType)
+        .toLowerCase()
+        .includes(searchValue);
+    }
+
+    if (columnId === "status") {
+      return getStatusDisplayName(itemValue as TeamStatus)
+        .toLowerCase()
+        .includes(searchValue);
+    }
+
+    return false;
+  };
+
   const table = useReactTable({
     data: teams,
     columns,
@@ -84,14 +102,12 @@ const Table: React.FC = () => {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    globalFilterFn: fuzzyFilter,
     state: {
       globalFilter,
     },
     onGlobalFilterChange: setGlobalFilter,
   });
-
-  if (loading) return <LoadingSpinner />;
-  if (error) return <VisualError error={error} />;
 
   return (
     <div className={styles.tableContainer}>
@@ -102,7 +118,7 @@ const Table: React.FC = () => {
             value={globalFilter ?? ""}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className={styles.searchInput}
-            placeholder="Buscar..."
+            placeholder="Buscar en todos los campos..."
           />
         </div>
       </div>
@@ -202,11 +218,8 @@ const Table: React.FC = () => {
           ))}
         </select>
       </div>
-      <button onClick={() => refetch()} className={styles.refetchButton}>
-        Actualizar datos
-      </button>
     </div>
   );
 };
 
-export default Table;
+export default LazyTable;
