@@ -24,11 +24,37 @@ async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
   if (!EXTERNAL_API_URL) {
     throw new Error("External API URL is not defined");
   }
-  const response = await fetch(EXTERNAL_API_URL);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+  console.log(`Fetching teams from external API: ${EXTERNAL_API_URL}`);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(EXTERNAL_API_URL, {
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error("API response is not an array");
+    }
+    console.log(`Fetched ${data.length} teams from external API`);
+    return data;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("Request timed out");
+      throw new Error("Request to external API timed out");
+    }
+    console.error("Error in getTeamsFromExternalAPI:", error);
+    throw error;
   }
-  return response.json();
 }
 
 export async function GET() {

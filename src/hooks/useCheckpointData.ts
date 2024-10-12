@@ -1,11 +1,15 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { CheckpointData, ErrorWithMessage } from "@/types/global";
 
-const fetchCheckpoints = async (): Promise<CheckpointData[]> => {
+interface CheckpointResponse {
+  checkpoints: CheckpointData[];
+  error?: ErrorWithMessage;
+}
+
+const fetchCheckpoints = async (): Promise<CheckpointResponse> => {
   const response = await fetch("/api/checkpoints");
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Network response was not ok");
+    throw new Error("Network response was not ok");
   }
   return response.json();
 };
@@ -14,14 +18,15 @@ export function useCheckpointData(): {
   checkpoints: CheckpointData[];
   loading: boolean;
   error: ErrorWithMessage | null;
-  refetch: () => Promise<UseQueryResult<CheckpointData[], ErrorWithMessage>>;
+  isPartialData: boolean;
+  refetch: () => Promise<UseQueryResult<CheckpointResponse, ErrorWithMessage>>;
 } {
   const {
-    data: checkpoints = [],
+    data,
     isLoading: loading,
     error,
     refetch,
-  } = useQuery<CheckpointData[], ErrorWithMessage>({
+  } = useQuery<CheckpointResponse, ErrorWithMessage>({
     queryKey: ["checkpoints"],
     queryFn: fetchCheckpoints,
     retry: 3,
@@ -34,12 +39,15 @@ export function useCheckpointData(): {
         error instanceof Error ? error.message : "An unknown error occurred",
       stack: error instanceof Error ? error.stack : undefined,
     };
+  } else if (data?.error) {
+    formattedError = data.error;
   }
 
   return {
-    checkpoints,
+    checkpoints: data?.checkpoints || [],
     loading,
     error: formattedError,
+    isPartialData: !!data?.error,
     refetch,
   };
 }
