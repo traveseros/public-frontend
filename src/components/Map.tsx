@@ -153,6 +153,8 @@ const Map: React.FC = () => {
             color: "red",
             fillColor: "#f03",
             fillOpacity: 0.5,
+            interactive: false,
+            bubblingMouseEvents: false,
           }}
         />
         {memoizedTeamMapElements}
