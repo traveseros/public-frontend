@@ -8,8 +8,11 @@ const EXTERNAL_API_URL = process.env.EXTERNAL_API_URL;
 
 async function readTeamsData(): Promise<TeamData[]> {
   try {
+    console.log("Reading teams data from file");
     const data = await fs.readFile(DATA_FILE, "utf8");
-    return JSON.parse(data);
+    const parsedData = JSON.parse(data);
+    console.log(`Read ${parsedData.length} teams from file`);
+    return parsedData;
   } catch (error) {
     console.error("Error reading teams data:", error);
     return [];
@@ -17,7 +20,14 @@ async function readTeamsData(): Promise<TeamData[]> {
 }
 
 async function writeTeamsData(data: TeamData[]): Promise<void> {
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+  try {
+    console.log(`Writing ${data.length} teams to file`);
+    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+    console.log("Teams data written successfully");
+  } catch (error) {
+    console.error("Error writing teams data:", error);
+    throw error;
+  }
 }
 
 async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
@@ -58,17 +68,22 @@ async function getTeamsFromExternalAPI(): Promise<TeamData[]> {
 }
 
 export async function GET() {
+  console.log("GET request received for teams");
   let teams: TeamData[] = [];
   let apiError: Error | null = null;
 
   try {
+    console.log("Attempting to fetch data from external API");
     teams = await getTeamsFromExternalAPI();
+    console.log("Data fetched successfully, writing to file");
     await writeTeamsData(teams);
   } catch (error) {
     console.error("Error fetching data from external API:", error);
     apiError =
       error instanceof Error ? error : new Error("Unknown error occurred");
+    console.log("Attempting to read cached data");
     teams = await readTeamsData();
+    console.log("Cached data read, team count:", teams.length);
   }
 
   const response: {
@@ -87,6 +102,7 @@ export async function GET() {
   }
 
   if (teams.length === 0) {
+    console.error("No team data available");
     response.error = {
       message: "No team data available",
       details:
@@ -95,5 +111,8 @@ export async function GET() {
     return NextResponse.json(response, { status: 404 });
   }
 
+  console.log(
+    `Returning ${teams.length} teams. Status: ${apiError ? 206 : 200}`
+  );
   return NextResponse.json(response, { status: apiError ? 206 : 200 });
 }
