@@ -1,5 +1,3 @@
-// hooks/useCheckpointData.ts
-
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { CheckpointData, ErrorWithMessage } from "@/types/global";
 

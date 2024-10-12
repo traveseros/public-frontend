@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { useMap, Marker, Popup, Polyline, CircleMarker } from "react-leaflet";
 import L from "leaflet";
+import { createRoot, Root } from "react-dom/client";
 import TeamPopup from "./TeamPopup";
 import { TeamData } from "@/types/global";
 import { getRouteColor } from "../app/lib/teams/utils";
@@ -17,6 +18,8 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
     const map = useMap();
     const markerRef = useRef<L.Marker>(null);
     const popupRef = useRef<L.Popup>(null);
+    const popupNodeRef = useRef<HTMLDivElement | null>(null);
+    const rootRef = useRef<Root | null>(null);
 
     const getTeamColor = useCallback((team: TeamData, isSelected: boolean) => {
       return isSelected ? "red" : getRouteColor(team.route);
@@ -57,6 +60,14 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
       if (!marker || !popup) return;
 
       marker.setIcon(getDorsalIcon(team, isSelected));
+      marker.setLatLng([lastPosition.lat, lastPosition.lng]);
+
+      if (popupNodeRef.current) {
+        if (!rootRef.current) {
+          rootRef.current = createRoot(popupNodeRef.current);
+        }
+        rootRef.current.render(<TeamPopup team={team} />);
+      }
 
       const handlePopupClose = () => {
         onTeamSelect(null);
@@ -122,7 +133,7 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
           ref={markerRef}
         >
           <Popup ref={popupRef} offset={[1.5, -12]}>
-            <TeamPopup team={team} lastPosition={lastPosition} />
+            <TeamPopup team={team} />
           </Popup>
         </Marker>
       </>
@@ -132,7 +143,19 @@ const TeamMapElements: React.FC<TeamMapElementsProps> = React.memo(
     return (
       prevProps.isSelected === nextProps.isSelected &&
       prevProps.team.id === nextProps.team.id &&
-      prevProps.team.routeCoordinates === nextProps.team.routeCoordinates
+      prevProps.team.status === nextProps.team.status &&
+      prevProps.team.routeCoordinates[
+        prevProps.team.routeCoordinates.length - 1
+      ].lat ===
+        nextProps.team.routeCoordinates[
+          nextProps.team.routeCoordinates.length - 1
+        ].lat &&
+      prevProps.team.routeCoordinates[
+        prevProps.team.routeCoordinates.length - 1
+      ].lng ===
+        nextProps.team.routeCoordinates[
+          nextProps.team.routeCoordinates.length - 1
+        ].lng
     );
   }
 );

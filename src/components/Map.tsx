@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useMemo,
   useEffect,
+  useContext,
 } from "react";
 import {
   MapContainer,
@@ -17,15 +18,14 @@ import "leaflet/dist/leaflet.css";
 import styles from "../styles/Map.module.css";
 import { useRouteData } from "../hooks/useRouteData";
 import { useCheckpointData } from "../hooks/useCheckpointData";
-import { RouteType, TeamStatus, TeamData } from "@/types/global";
+import { RouteType, TeamStatus } from "@/types/global";
 import TeamMapElements from "./TeamMapElements";
 import RouteMapElements from "./RouteMapElements";
 import CheckpointMapElements from "./CheckpointMapElements";
 import TeamList from "./TeamList";
 import FilterButtons from "./FilterButtons";
 import MapControlsWrapper from "./MapControlsWrapper";
-import { UseQueryResult } from "@tanstack/react-query";
-import { ErrorWithMessage } from "@/types/global";
+import { TeamContext } from "./SharedDataContainer";
 
 const ChangeView: React.FC<{ center: [number, number] }> = React.memo(
   ({ center }) => {
@@ -46,21 +46,12 @@ const MapEventHandler: React.FC<{ onMapClick: () => void }> = ({
   return null;
 };
 
-interface MapProps {
-  teams: TeamData[];
-  refetch: () => Promise<
-    UseQueryResult<
-      { teams: TeamData[]; error?: ErrorWithMessage },
-      ErrorWithMessage
-    >
-  >;
-}
-
 interface ExtendedIconDefault extends L.Icon.Default {
   _getIconUrl?: string;
 }
 
-const Map: React.FC<MapProps> = ({ teams, refetch }) => {
+const Map: React.FC = () => {
+  const { teams, refetch } = useContext(TeamContext);
   const { routes } = useRouteData();
   const { checkpoints } = useCheckpointData();
   const mapRef = useRef<L.Map | null>(null);
@@ -157,7 +148,7 @@ const Map: React.FC<MapProps> = ({ teams, refetch }) => {
         />
         <Circle
           center={initialCenter}
-          radius={100}
+          radius={200}
           pathOptions={{
             color: "red",
             fillColor: "#f03",

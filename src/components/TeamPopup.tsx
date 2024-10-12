@@ -9,10 +9,11 @@ import {
 
 interface TeamPopupProps {
   team: TeamData;
-  lastPosition: { lat: number; lng: number };
 }
 
-const TeamPopup: React.FC<TeamPopupProps> = ({ team, lastPosition }) => {
+const TeamPopup: React.FC<TeamPopupProps> = ({ team }) => {
+  const lastPosition = team.routeCoordinates[team.routeCoordinates.length - 1];
+
   return (
     <div className={styles.popupContainer}>
       <h3 className={styles.popupTitle}>Dorsal: {team.dorsal}</h3>
@@ -53,4 +54,4 @@ const TeamPopup: React.FC<TeamPopupProps> = ({ team, lastPosition }) => {
   );
 };
 
-export default TeamPopup;
+export default React.memo(TeamPopup);

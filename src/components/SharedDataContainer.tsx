@@ -71,7 +71,7 @@ const SharedDataContainer: React.FC<SharedDataContainerProps> = React.memo(
 
     if (loading) return <LoadingSpinner />;
 
-    if (teams.length === 0) {
+    if (normalizedTeams.length === 0) {
       return <VisualError error={{ message: "No team data available" }} />;
     }
 
@@ -79,11 +79,7 @@ const SharedDataContainer: React.FC<SharedDataContainerProps> = React.memo(
       <TeamContext.Provider value={contextValue}>
         <div style={{ position: "relative" }}>
           {error && <DismissableError error={error} />}
-          {showMap ? (
-            <LazyMap teams={normalizedTeams} refetch={refetch} />
-          ) : (
-            <LazyTable teams={normalizedTeams} />
-          )}
+          {showMap ? <LazyMap /> : <LazyTable teams={normalizedTeams} />}
         </div>
       </TeamContext.Provider>
     );
